@@ -1,0 +1,95 @@
+.auth-page {
+    min-height: 100vh;
+    background-size: 400px;
+    /* Pattern size */
+    background-repeat: repeat;
+    background-color: #FFF8E1;
+    /* Fallback color */
+}
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Subtract navbar height approximately */
+    min-height: calc(100vh - 80px);
+    padding: 40px 24px;
+}
+
+.auth-card {
+    background: var(--color-surface);
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    border: 1px solid var(--color-border);
+}
+
+.auth-card h2 {
+    color: var(--color-primary-dark);
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    color: var(--color-text-light);
+    margin-bottom: 32px;
+}
+
+.auth-form {
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background-color: #FAFAFA;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    background-color: var(--color-surface);
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    font-size: 1.1rem;
+}
+
+.auth-footer {
+    margin-top: 24px;
+    font-size: 0.95rem;
+    color: var(--color-text-light);
+}
+
+.auth-footer a {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
