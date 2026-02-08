@@ -1,8 +1,5 @@
 import React from 'react';
-import Navbar from '../components/Navbar'; // Assuming there is a Navbar, if not I will check or create simple nav here.
-// Actually, Navbar is not yet confirmed to exist in components, but Home likely used it or will use it.
-// I will assume a layout or include a simple nav in App or Pages. 
-// For now, I'll build the page content.
+import Navbar from '../components/Navbar'; 
 
 function About() {
     return (

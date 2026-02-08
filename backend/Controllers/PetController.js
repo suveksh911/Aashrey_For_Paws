@@ -30,7 +30,7 @@ const getPetById = async (req, res) => {
 const createPet = async (req, res) => {
     try {
         const body = req.body;
-        // Ensure images array exists if only image string is provided, or vice versa
+       
         if (!body.images && body.image) {
             body.images = [body.image];
         } else if (body.images && body.images.length > 0 && !body.image) {

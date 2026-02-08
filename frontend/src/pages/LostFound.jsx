@@ -1,5 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const LOST_FOUND = [
+    {
+        _id: 'lf1',
+        name: 'KIko',
+        type: 'Lost',
+        breed: 'Local Mix',
+        location: 'Koteshwor, Kathmandu',
+        gender: 'Male',
+        description: 'Lost near the main chowk. Wearing a red collar. Very friendly but scared.',
+        contactInfo: '9841000000',
+        image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+        _id: 'lf2',
+        name: 'Unknown',
+        type: 'Found',
+        breed: 'Golden Retriever',
+        location: 'Dharan -15',
+        gender: 'Female',
+        description: 'Found wandering near the main road. Seems well fed and trained. Currently at shelter.',
+        contactInfo: '9801000000 (Sneha\'s Care)',
+        image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+        _id: 'lf3',
+        name: 'pluff',
+        type: 'Lost',
+        breed: 'Beagle',
+        location: 'Itahari -17',
+        gender: 'Female',
+        description: 'Ran away during Tihar festival due to firecrackers. Has a distinct spot on left ear.',
+        contactInfo: '9851000000',
+        image: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+        _id: 'lf4',
+        name: 'Unknown Pup',
+        type: 'Found',
+        breed: 'Husky Mix',
+        location: 'BPKIHS, Dharan',
+        gender: 'Male',
+        description: 'Found near camp main gate shivering in the cold. Young puppy, blue eyes.',
+        contactInfo: 'Contact local police station',
+        image: 'https://images.unsplash.com/photo-1605568427561-40dd23d2acca?auto=format&fit=crop&w=600&q=80'
+    }
+];
 
 function LostFound() {
     const [activeTab, setActiveTab] = useState('Lost');
@@ -9,6 +58,8 @@ function LostFound() {
         name: '', breed: '', type: 'Lost', description: '', location: '', contactInfo: '',
         category: 'Dog', age: 'Unknown', status: 'Pending', image: ''
     });
+    const { user, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchPets();
@@ -16,35 +67,51 @@ function LostFound() {
 
     const fetchPets = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/pets?type=${activeTab}`);
-            const result = await response.json();
-            if (result.success) setPets(result.data);
-        } catch (err) { console.error(err); }
+            // Check local storage first
+            const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
+
+            // Mock API or Static data
+            const allPets = [...localPets, ...LOST_FOUND];
+
+            // Filter by active tab
+            setPets(allPets.filter(p => p.type === activeTab));
+
+        } catch (err) {
+            console.error(err);
+            setPets(LOST_FOUND.filter(p => p.type === activeTab));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const payload = { ...formData, type: activeTab };
-            const response = await fetch('http://localhost:5000/pets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (result.success) {
-                toast.success("Report submitted successfully");
-                setShowForm(false);
-                fetchPets();
-            } else {
-                toast.error(result.message);
-            }
-        } catch (err) { toast.error("Failed to submit report"); }
+
+        const newPet = {
+            _id: Date.now().toString(),
+            ...formData,
+            type: activeTab,
+            image: formData.image || 'https://via.placeholder.com/600x400?text=No+Image', // Default image
+            createdAt: new Date().toISOString()
+        };
+
+        // Save to local storage
+        const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
+        localStorage.setItem('lostFoundPets', JSON.stringify([newPet, ...localPets]));
+
+        toast.success("Report submitted successfully");
+        setShowForm(false);
+        setFormData({
+            name: '', breed: '', type: 'Lost', description: '', location: '', contactInfo: '',
+            category: 'Dog', age: 'Unknown', status: 'Pending', image: ''
+        });
+        fetchPets();
     };
 
     return (
         <div className="lost-found-page container">
-            <h1 className="page-title">Lost & Found</h1>
+            <div className="lost-found-header">
+                <h1>Lost & Found</h1>
+                <p>Help us reunite pets with their owners.</p>
+            </div>
             <div className="tabs">
                 <button className={`tab-btn ${activeTab === 'Lost' ? 'active' : ''}`} onClick={() => setActiveTab('Lost')}>Lost Pets</button>
                 <button className={`tab-btn ${activeTab === 'Found' ? 'active' : ''}`} onClick={() => setActiveTab('Found')}>Found Pets</button>
@@ -52,7 +119,14 @@ function LostFound() {
 
             <div className="action-bar">
                 <p>Have you {activeTab === 'Lost' ? 'lost' : 'found'} a pet? Report it here to help reunite them.</p>
-                <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+                <button className="btn btn-primary" onClick={() => {
+                    if (!isAuthenticated) {
+                        toast.info("Please login to report a pet");
+                        navigate('/login');
+                    } else {
+                        setShowForm(!showForm);
+                    }
+                }}>
                     {showForm ? 'Cancel Report' : `Report ${activeTab} Pet`}
                 </button>
             </div>
@@ -92,7 +166,19 @@ function LostFound() {
             </div>
 
             <style>{`
-                .lost-found-page { padding: 4rem 1rem; }
+                .lost-found-page { padding: 2rem; }
+                .lost-found-header {
+                    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1601758228041-f3b2795255db?auto=format&fit=crop&w=1950&q=80');
+                    background-size: cover;
+                    background-position: center;
+                    color: white;
+                    text-align: center;
+                    padding: 4rem 1rem;
+                    border-radius: var(--radius-md);
+                    margin-bottom: 2rem;
+                }
+                .lost-found-header h1 { font-size: 3rem; margin-bottom: 0.5rem; color: white; }
+                .lost-found-header p { font-size: 1.2rem; opacity: 0.9; }
                 .tabs { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
                 .tab-btn { padding: 1rem 2rem; background: var(--color-surface); border: 2px solid transparent; font-size: 1.2rem; font-weight: 600; cursor: pointer; border-radius: var(--radius-md); }
                 .tab-btn.active { border-color: var(--color-primary); color: var(--color-primary); }

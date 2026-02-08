@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import StarRating from '../components/StarRating';
+
 
 function Contact() {
     const [formData, setFormData] = useState({
@@ -53,6 +55,7 @@ function Contact() {
                     </div>
                 </div>
                 <div className="contact-form">
+                    <h2>Send us a Message</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label>Name</label>
@@ -70,6 +73,9 @@ function Contact() {
                     </form>
                 </div>
             </div>
+
+            <FeedbackSection />
+
             <style>{`
                 .contact-page {
                     padding: 4rem 1rem;
@@ -85,7 +91,7 @@ function Contact() {
                     grid-template-columns: 1fr 1fr;
                     gap: 4rem;
                     max-width: 1000px;
-                    margin: 0 auto;
+                    margin: 0 auto 4rem;
                 }
                 .contact-info {
                     padding: 2rem;
@@ -95,6 +101,10 @@ function Contact() {
                 }
                 .contact-info h2 {
                     color: var(--color-primary);
+                    margin-bottom: 1rem;
+                }
+                .contact-form h2 {
+                     color: var(--color-primary);
                     margin-bottom: 1rem;
                 }
                 .contact-info p {
@@ -132,6 +142,20 @@ function Contact() {
                     outline: 2px solid var(--color-primary);
                 }
 
+                /* Feedback Section */
+                 .feedback-section {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: #fff;
+                    padding: 2rem;
+                    border-radius: var(--radius-lg);
+                    box-shadow: var(--shadow-md);
+                    text-align: center;
+                }
+                .feedback-section h2 { margin-bottom: 1rem; color: var(--color-primary-dark); }
+                .star-container { display: flex; justify-content: center; margin-bottom: 1rem; }
+                .feedback-form textarea { width: 100%; margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+
                 @media (max-width: 768px) {
                     .contact-wrapper {
                         grid-template-columns: 1fr;
@@ -139,6 +163,54 @@ function Contact() {
                     }
                 }
             `}</style>
+        </div>
+    );
+}
+
+
+
+function FeedbackSection() {
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (rating === 0) {
+            toast.warn("Please select a rating!");
+            return;
+        }
+
+        const newFeedback = {
+            id: Date.now(),
+            rating,
+            comment,
+            date: new Date().toLocaleDateString()
+        };
+
+        const existingFeedback = JSON.parse(localStorage.getItem('siteFeedback')) || [];
+        localStorage.setItem('siteFeedback', JSON.stringify([newFeedback, ...existingFeedback]));
+
+        toast.success("Thank you for your feedback!");
+        setRating(0);
+        setComment('');
+    };
+
+    return (
+        <div className="feedback-section">
+            <h2>Rate Your Experience</h2>
+            <p>We value your feedback to help us improve Aashrey For Paws.</p>
+            <form onSubmit={handleSubmit} className="feedback-form">
+                <div className="star-container">
+                    <StarRating rating={rating} setRating={setRating} />
+                </div>
+                <textarea
+                    placeholder="Tell us what you think..."
+                    rows="3"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                ></textarea>
+                <button type="submit" className="btn btn-primary">Submit Feedback</button>
+            </form>
         </div>
     );
 }

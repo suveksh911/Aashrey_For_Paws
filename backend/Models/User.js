@@ -6,15 +6,21 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
-     email: {
+    email: {
         type: String,
         required: true,
         unique: true
     },
-     password: {
+    password: {
         type: String,
         required: true
     },
+    role: {
+        type: String,
+        enum: ['Adopter', 'NGO', 'Owner'],
+        required: true,
+        default: 'Adopter'
+    }
 })
 
 const UserModel = mongoose.model('User', UserSchema);

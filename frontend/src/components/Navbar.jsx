@@ -1,113 +1,237 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaBars, FaTimes, FaUserCircle, FaBell } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import "./Navbar.css"; 
 
-function Navbar({ isAuthenticated, setIsAuthenticated }) {
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('loggedInUser');
-    setIsAuthenticated(false);
-    toast.success("Logged out successfully");
-    navigate('/login');
-  }
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  }
+    setIsOpen(!isOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getDashboardLink = () => {
+    if (!user) return '/';
+    if (user.role === 'Admin') return '/admin';
+    if (user.role === 'NGO') return '/ngo';
+    return '/user';
+  };
 
   return (
     <nav className="navbar">
-      <div className="container nav-container">
-        <Link to="/" className="logo">🐾Aashrey For Paws </Link>
+      <div className="navbar-container">
+        <Link to="/" className="navbar-logo">
+          Aashrey For Paws 🐾
+        </Link>
 
-        <div className="mobile-menu-btn" onClick={toggleMenu}>
-          ☰
+        <div className="menu-icon" onClick={toggleMenu}>
+          {isOpen ? <FaTimes /> : <FaBars />}
         </div>
 
-        <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-          <Link to="/" className="nav-link" onClick={() => setIsMenuOpen(false)}>Home</Link>
-          <Link to="/pet-find" className="nav-link" onClick={() => setIsMenuOpen(false)}>Adopt</Link>
-          <Link to="/lost-found" className="nav-link" onClick={() => setIsMenuOpen(false)}>Lost & Found</Link>
-          <Link to="/community" className="nav-link" onClick={() => setIsMenuOpen(false)}>Community</Link>
-          <Link to="/about" className="nav-link" onClick={() => setIsMenuOpen(false)}>About</Link>
-          <Link to="/contact" className="nav-link" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-
-          {isAuthenticated ? (
-            <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="btn btn-outline btn-sm">Logout</button>
-          ) : (
-            <Link to="/login" className="nav-link" onClick={() => setIsMenuOpen(false)}>Login</Link>
+        <ul className={isOpen ? "nav-menu active" : "nav-menu"}>
+          <li className="nav-item">
+            <Link to="/" className="nav-links" onClick={toggleMenu}>
+              Home
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/about" className="nav-links" onClick={toggleMenu}>
+              About
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/pet-find" className="nav-links" onClick={toggleMenu}>
+              Adopt
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/lost-found" className="nav-links" onClick={toggleMenu}>
+              Lost & Found
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/community" className="nav-links" onClick={toggleMenu}>
+              Community
+            </Link>
+          </li>
+          { }
+          {(!user || ['Adopter', 'Owner'].includes(user.role)) && (
+            <li className="nav-item">
+              <Link to="/donate" className="nav-links" onClick={toggleMenu}>
+                Donate
+              </Link>
+            </li>
           )}
-        </div>
+          <li className="nav-item">
+            <Link to="/contact" className="nav-links" onClick={toggleMenu}>
+              Contact
+            </Link>
+          </li>
+          {isAuthenticated ? (
+            <>
+              <li className="nav-item">
+                <Link to={getDashboardLink()} className="nav-links" onClick={toggleMenu}>
+                  Dashboard
+                </Link>
+              </li>
+              <li className="nav-item" onClick={handleLogout}>
+                <span className="nav-links-mobile-logout">Logout</span>
+              </li>
+              <Link to="/notifications" className="nav-links notification-icon">
+                <FaBell size={20} />
+                { }
+              </Link>
+              <li className="nav-item-profile">
+                <span className="profile-icon" title={`Logged in as ${user?.name}`}>
+                  <FaUserCircle size={24} />
+                </span>
+                <button onClick={handleLogout} className="btn-logout-desktop">Logout</button>
+              </li>
+            </>
+          ) : (
+            <li className="nav-item">
+              <Link to="/login" className="nav-links-mobile">
+                Login
+              </Link>
+            </li>
+          )}
+        </ul>
+        {!isAuthenticated && <Link to="/login" className="btn-login-desktop">Login</Link>}
       </div>
       <style>{`
+                /* Basic Navbar Styles if Navbar.css is missing/incomplete */
                 .navbar {
-                    background-color: var(--color-surface);
-                    box-shadow: var(--shadow-sm);
-                    padding: 1rem 0;
+                    background: #5d4037; /* Brown theme */
+                    height: 80px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 1.2rem;
                     position: sticky;
                     top: 0;
-                    z-index: 1000;
+                    z-index: 999;
                 }
-                .nav-container {
+                .navbar-container {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    height: 80px;
+                    max-width: 1500px;
+                    width: 100%;
+                    padding: 0 20px;
                 }
-                .logo {
-                    font-family: var(--font-family-heading);
-                    font-weight: 700;
+                .navbar-logo {
+                    color: #fff;
+                    font-weight: bold;
+                    text-decoration: none;
                     font-size: 1.5rem;
-                    color: var(--color-primary);
+                }
+                .nav-menu {
+                    display: flex;
+                    list-style: none;
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                    gap: 20px;
                 }
                 .nav-links {
-                    display: flex;
-                    gap: 1.5rem;
-                    align-items: center;
+                    color: #fff;
+                    text-decoration: none;
+                    padding: 0.5rem 1rem;
                 }
-                .nav-link {
-                    color: var(--color-text);
-                    font-weight: 500;
-                    transition: color 0.2s;
+                .nav-links:hover {
+                    border-bottom: 2px solid #fff;
                 }
-                .nav-link:hover {
-                    color: var(--color-primary);
-                }
-                .btn-sm {
-                   padding: 0.5rem 1rem;
-                   font-size: 0.9rem;
-                }
-                .mobile-menu-btn {
-                    display: none;
-                    font-size: 1.5rem;
+                .btn-login-desktop, .btn-logout-desktop {
+                    padding: 8px 20px;
+                    border-radius: 4px;
+                    outline: none;
+                    border: none;
+                    font-size: 18px;
+                    color: #5d4037;
+                    background-color: #fff;
+                    font-weight: bold;
                     cursor: pointer;
-                    color: var(--color-primary);
+                    text-decoration: none;
+                    margin-left: 20px;
+                }
+                .btn-login-desktop:hover, .btn-logout-desktop:hover {
+                    background-color: #f1f1f1;
+                    transition: all 0.3s ease-out;
+                }
+                .menu-icon {
+                    display: none;
+                }
+                .nav-item-profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: white;
+                }
+                 .nav-links-mobile-logout {
+                    color: #fff;
+                    text-decoration: none;
+                    padding: 0.5rem 1rem;
+                    cursor: pointer;
+                    display: none; /* Hidden on desktop */
+                }
+                .nav-links-mobile {
+                    display: none;
                 }
 
-                @media (max-width: 768px) {
-                    .mobile-menu-btn {
+
+                @media screen and (max-width: 960px) {
+                    .menu-icon {
                         display: block;
+                        color: #fff;
+                        font-size: 1.8rem;
+                        cursor: pointer;
                     }
-                    .nav-links {
-                        display: none;
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        right: 0;
-                        background: var(--color-surface);
-                        flex-direction: column;
-                        padding: 1rem;
-                        box-shadow: var(--shadow-md);
-                    }
-                    .nav-links.active {
+                    .nav-menu {
                         display: flex;
+                        flex-direction: column;
+                        width: 100%;
+                        height: 90vh;
+                        position: absolute;
+                        top: 80px;
+                        left: -100%;
+                        opacity: 1;
+                        transition: all 0.5s ease;
+                        background: #5d4037;
+                    }
+                    .nav-menu.active {
+                        left: 0;
+                        opacity: 1;
+                        transition: all 0.5s ease;
+                        z-index: 1;
+                    }
+                    .nav-item-profile, .btn-login-desktop {
+                        display: none;
+                    }
+                    .nav-links-mobile {
+                        display: block;
+                        text-align: center;
+                        padding: 1.5rem;
+                        width: 100%;
+                        display: table;
+                        color: #fff;
+                        text-decoration: none;
+                    }
+                    .nav-links-mobile-logout {
+                        display: block;
                     }
                 }
             `}</style>
     </nav>
   );
-}
+};
 
 export default Navbar;
