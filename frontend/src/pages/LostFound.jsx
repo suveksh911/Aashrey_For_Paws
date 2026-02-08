@@ -67,13 +67,13 @@ function LostFound() {
 
     const fetchPets = async () => {
         try {
-            // Check local storage first
+            
             const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
 
-            // Mock API or Static data
+          
             const allPets = [...localPets, ...LOST_FOUND];
 
-            // Filter by active tab
+           
             setPets(allPets.filter(p => p.type === activeTab));
 
         } catch (err) {
@@ -89,11 +89,11 @@ function LostFound() {
             _id: Date.now().toString(),
             ...formData,
             type: activeTab,
-            image: formData.image || 'https://via.placeholder.com/600x400?text=No+Image', // Default image
+            image: formData.image || 'https://via.placeholder.com/600x400?text=No+Image', 
             createdAt: new Date().toISOString()
         };
 
-        // Save to local storage
+       
         const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
         localStorage.setItem('lostFoundPets', JSON.stringify([newPet, ...localPets]));
 

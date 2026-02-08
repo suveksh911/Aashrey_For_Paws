@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { FaBell, FaCheckCircle, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
 
 const MOCK_NOTIFICATIONS = [
-    { id: 1, type: 'success', message: 'Your adoption request for Buddy has been approved!', date: '2023-10-26', read: false },
-    { id: 2, type: 'info', message: 'New pets added near you.', date: '2023-10-25', read: true },
-    { id: 3, type: 'alert', message: 'Vaccination reminder for Misty.', date: '2023-10-24', read: true }
+    { id: 1, type: 'success', message: 'Your adoption request for Buddy has been approved!', date: '2025-1-26', read: false },
+    { id: 2, type: 'info', message: 'New pets added near you.', date: '2026-2-1', read: true },
+    { id: 3, type: 'alert', message: 'Vaccination reminder for Misty.', date: '2025-12-24', read: true }
 ];
 
 const Notifications = () => {

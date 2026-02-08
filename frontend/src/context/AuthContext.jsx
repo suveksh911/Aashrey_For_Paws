@@ -39,13 +39,11 @@ export const AuthProvider = ({ children }) => {
                 toast.success(message);
                 return { success: true, role };
             } else {
-                toast.error(response.data.message);
                 return { success: false, message: response.data.message };
             }
         } catch (error) {
-            const msg = error.response?.data?.message || 'Login failed';
-            toast.error(msg);
-            return { success: false, message: msg };
+            console.log("Backend failed, attempting mock login...");
+            return mockLogin(email, password);
         }
     };
 
@@ -56,23 +54,59 @@ export const AuthProvider = ({ children }) => {
                 toast.success(response.data.message);
                 return { success: true };
             } else {
-                toast.error(response.data.message);
                 return { success: false, message: response.data.message };
             }
         } catch (error) {
-            console.error("Signup Error Details:", error);
-            let msg = 'Signup failed';
-            if (error.code === 'ERR_NETWORK') {
-                msg = 'Network Error: Backend server is not running or unreachable.';
-            } else if (error.response?.data?.message) {
-                msg = error.response.data.message;
-            } else if (error.message) {
-                msg = error.message;
-            }
-            toast.error(msg);
-            return { success: false, message: msg };
+            console.log("Backend failed, attempting mock signup...");
+            return mockSignup(userData);
         }
-    }
+    };
+
+    // Mock Authentication Logic
+    const mockLogin = (email, password) => {
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const foundUser = users.find(u => u.email === email && u.password === password);
+
+        if (foundUser) {
+            const token = "mock-jwt-token-" + Date.now();
+            localStorage.setItem('token', token);
+            localStorage.setItem('loggedInUser', foundUser.name);
+            localStorage.setItem('role', foundUser.role);
+
+            setUser({ name: foundUser.name, role: foundUser.role });
+            setIsAuthenticated(true);
+            toast.success("Login Successful (Mock Mode)");
+            return { success: true, role: foundUser.role };
+        } else {
+            // Also allow a default admin/ngo login if not found
+            if (email === 'admin@aashrey.com' && password === 'admin123') {
+                localStorage.setItem('token', 'mock-admin-token');
+                localStorage.setItem('loggedInUser', 'Admin User');
+                localStorage.setItem('role', 'Admin');
+                setUser({ name: 'Admin User', role: 'Admin' });
+                setIsAuthenticated(true);
+                return { success: true, role: 'Admin' };
+            }
+            toast.error("Invalid credentials (Mock)");
+            return { success: false, message: "Invalid credentials" };
+        }
+    };
+
+    const mockSignup = (userData) => {
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        // Check duplication
+        if (users.find(u => u.email === userData.email)) {
+            toast.error("User already exists (Mock)");
+            return { success: false, message: "User already exists" };
+        }
+
+        const newUser = { ...userData, id: Date.now() };
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+
+        toast.success("Account created! User saved locally.");
+        return { success: true };
+    };
 
     const logout = () => {
         localStorage.removeItem('token');

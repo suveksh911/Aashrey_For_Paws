@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 import StarRating from '../components/StarRating';
 
 
@@ -172,6 +173,31 @@ function Contact() {
 function FeedbackSection() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [allFeedback, setAllFeedback] = useState([]);
+    const [editingId, setEditingId] = useState(null);
+
+    useEffect(() => {
+        let storedFeedback = [];
+        try {
+            const item = localStorage.getItem('siteFeedback');
+            if (item) {
+                storedFeedback = JSON.parse(item);
+            }
+        } catch (e) {
+            console.error("Failed to parse feedback", e);
+            localStorage.removeItem('siteFeedback'); // Clear corrupt data
+        }
+
+        if (!Array.isArray(storedFeedback) || storedFeedback.length === 0) {
+            const mockFeedback = [
+                { id: 1, rating: 5, comment: "Amazing platform! Found my best friend here.", date: "2023-10-15" },
+                { id: 2, rating: 4, comment: "Great initiative, but could use more filter options.", date: "2023-11-02" }
+            ];
+            setAllFeedback(mockFeedback);
+        } else {
+            setAllFeedback(storedFeedback);
+        }
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -180,19 +206,65 @@ function FeedbackSection() {
             return;
         }
 
-        const newFeedback = {
-            id: Date.now(),
-            rating,
-            comment,
-            date: new Date().toLocaleDateString()
-        };
+        let existingFeedback = [];
+        try {
+            const item = localStorage.getItem('siteFeedback');
+            if (item) {
+                existingFeedback = JSON.parse(item);
+            }
+        } catch (e) {
+            existingFeedback = [];
+        }
+        if (!Array.isArray(existingFeedback)) existingFeedback = [];
 
-        const existingFeedback = JSON.parse(localStorage.getItem('siteFeedback')) || [];
-        localStorage.setItem('siteFeedback', JSON.stringify([newFeedback, ...existingFeedback]));
+        if (editingId) {
+            // Update existing
+            const updatedFeedback = existingFeedback.map(fb =>
+                fb.id === editingId ? { ...fb, rating, comment, date: new Date().toLocaleDateString() + ' (Edited)' } : fb
+            );
+            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
+            setAllFeedback(updatedFeedback);
+            toast.success("Feedback updated!");
+            setEditingId(null);
+        } else {
+            // Add new
+            const newFeedback = {
+                id: Date.now(),
+                rating,
+                comment,
+                date: new Date().toLocaleDateString()
+            };
+            const updatedFeedback = [newFeedback, ...existingFeedback];
+            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
+            setAllFeedback(updatedFeedback);
+            toast.success("Thank you for your feedback!");
+        }
 
-        toast.success("Thank you for your feedback!");
         setRating(0);
         setComment('');
+    };
+
+    const handleEdit = (feedback) => {
+        setRating(feedback.rating);
+        setComment(feedback.comment);
+        setEditingId(feedback.id);
+        window.scrollTo({ top: document.querySelector('.feedback-section').offsetTop, behavior: 'smooth' });
+    };
+
+    const handleDelete = (id) => {
+        if (window.confirm("Are you sure you want to delete this review?")) {
+            const updatedFeedback = allFeedback.filter(fb => fb.id !== id);
+            setAllFeedback(updatedFeedback);
+            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
+            toast.info("Review deleted.");
+
+            // If deleting the item currently being edited, reset form
+            if (editingId === id) {
+                setEditingId(null);
+                setRating(0);
+                setComment('');
+            }
+        }
     };
 
     return (
@@ -209,8 +281,57 @@ function FeedbackSection() {
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                 ></textarea>
-                <button type="submit" className="btn btn-primary">Submit Feedback</button>
+                <button type="submit" className="btn btn-primary">
+                    {editingId ? 'Update Feedback' : 'Submit Feedback'}
+                </button>
+                {editingId && (
+                    <button type="button" className="btn btn-text" onClick={() => {
+                        setEditingId(null);
+                        setRating(0);
+                        setComment('');
+                    }} style={{ marginLeft: '1rem', color: '#666' }}>
+                        Cancel
+                    </button>
+                )}
             </form>
+
+            <div className="reviews-list">
+                <h3>Recent Reviews</h3>
+                {allFeedback.length === 0 ? (
+                    <p>No reviews yet. Be the first!</p>
+                ) : (
+                    allFeedback.map((fb, idx) => (
+                        <div key={idx} className="review-card">
+                            <div className="review-header">
+                                <StarRating rating={fb.rating} editable={false} />
+                                <div className="review-meta">
+                                    <span className="review-date">{fb.date}</span>
+                                    <div className="review-actions">
+                                        <button onClick={() => handleEdit(fb)} className="icon-btn edit-btn" title="Edit"><FaEdit /></button>
+                                        <button onClick={() => handleDelete(fb.id)} className="icon-btn delete-btn" title="Delete"><FaTrash /></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="review-text">"{fb.comment}"</p>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            <style>{`
+                .reviews-list { margin-top: 3rem; text-align: left; border-top: 1px solid #eee; padding-top: 2rem; }
+                .reviews-list h3 { color: var(--color-primary-dark); margin-bottom: 1.5rem; }
+                .review-card { background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+                .review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+                .review-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+                .review-date { font-size: 0.85rem; color: #888; }
+                .review-text { font-style: italic; color: #555; }
+                .review-actions { display: flex; gap: 0.5rem; }
+                .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s; }
+                .icon-btn:hover { transform: scale(1.1); }
+                .edit-btn { color: #2196F3; }
+                .delete-btn { color: #F44336; }
+            `}</style>
         </div>
     );
 }
