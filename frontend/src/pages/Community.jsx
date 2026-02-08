@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { FaPen, FaUserCircle, FaHeart, FaComment, FaShare, FaTimes } from 'react-icons/fa';
 
 const MOCK_POSTS = [
     {
@@ -20,7 +21,7 @@ const MOCK_POSTS = [
     },
     {
         _id: 'p2',
-        title: 'Found this little guy near Thamel',
+        title: 'Found this little guy near Dharan',
         content: 'He was shivering and hungry. We took him in and he is doing much better now. Meet "Lucky"!',
         author: 'Rajesh K.',
         category: 'Story',
@@ -34,8 +35,8 @@ const MOCK_POSTS = [
     },
     {
         _id: 'p3',
-        title: 'Best vet clinic in Lalitpur?',
-        content: 'My cat needs a dental checkup. Any recommendations for affordable and reliable vets in the Lalitpur area?',
+        title: 'Best vet clinic in Itahari?',
+        content: 'My cat needs a dental checkup. Any recommendations for affordable and reliable vets in the Itahari area?',
         author: 'Anita S.',
         category: 'Question',
         likes: 8,
@@ -62,7 +63,7 @@ function Community() {
     const fetchPosts = async () => {
         try {
             const localPosts = JSON.parse(localStorage.getItem('communityPosts')) || [];
-            
+
             const normalizedLocalPosts = localPosts.map(p => ({
                 ...p,
                 comments: Array.isArray(p.comments) ? p.comments : []
@@ -93,7 +94,7 @@ function Community() {
         const updatedLocalPosts = [newPostData, ...localPosts];
         localStorage.setItem('communityPosts', JSON.stringify(updatedLocalPosts));
 
-       
+
         setPosts([newPostData, ...posts]);
 
         toast.success("Post published!");
@@ -111,7 +112,7 @@ function Community() {
             text: commentText
         };
 
-       
+
         const updatedPosts = posts.map(post => {
             if (post._id === postId) {
                 const currentComments = Array.isArray(post.comments) ? post.comments : [];
@@ -122,7 +123,7 @@ function Community() {
 
         setPosts(updatedPosts);
 
-        
+
         const localPosts = JSON.parse(localStorage.getItem('communityPosts')) || [];
         const postIndex = localPosts.findIndex(p => p._id === postId);
         if (postIndex > -1) {
@@ -145,7 +146,7 @@ function Community() {
 
     return (
         <div className="community-page container">
-            {}
+            { }
             <div className="community-header">
                 <div className="header-content">
                     <h1>Community Forum</h1>
@@ -163,7 +164,7 @@ function Community() {
                 </div>
             </div>
 
-            {}
+            { }
             <div className="posts-feed">
                 {posts.map(post => {
                     const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
@@ -202,7 +203,7 @@ function Community() {
                                 </button>
                             </div>
 
-                            {}
+                            { }
                             {expandedPostId === post._id && (
                                 <div className="comments-section">
                                     <div className="comments-list">
@@ -231,7 +232,7 @@ function Community() {
                 })}
             </div>
 
-            {}
+            { }
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
