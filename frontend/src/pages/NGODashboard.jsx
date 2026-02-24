@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import NGOPetListings from '../components/NGOPetListings';
-import NGOAdoptionRequests from '../components/NGOAdoptionRequests';
+import AdoptionRequestsManager from '../components/AdoptionRequestsManager';
 import NGOProfile from '../components/NGOProfile';
-import '../components/Navbar.css'; 
+import VerificationStatus from './VerificationStatus';
+import '../components/Navbar.css';
+
+import NGOCampaignsManager from '../components/NGOCampaignsManager';
 
 function NGODashboard() {
     const [activeTab, setActiveTab] = useState('listings');
@@ -31,18 +34,34 @@ function NGODashboard() {
                     Adoption Requests
                 </button>
                 <button
+                    className={`tab-btn ${activeTab === 'campaigns' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('campaigns')}
+                    style={tabStyle(activeTab === 'campaigns')}
+                >
+                    Campaigns
+                </button>
+                <button
                     className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
                     onClick={() => setActiveTab('profile')}
                     style={tabStyle(activeTab === 'profile')}
                 >
-                    Organization Profile
+                    Profile
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'verification' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('verification')}
+                    style={tabStyle(activeTab === 'verification')}
+                >
+                    Verification
                 </button>
             </div>
 
             <div className="dashboard-content">
                 {activeTab === 'listings' && <NGOPetListings />}
-                {activeTab === 'requests' && <NGOAdoptionRequests />}
+                {activeTab === 'requests' && <AdoptionRequestsManager />}
+                {activeTab === 'campaigns' && <NGOCampaignsManager />}
                 {activeTab === 'profile' && <NGOProfile />}
+                {activeTab === 'verification' && <VerificationStatus />}
             </div>
         </div>
     );

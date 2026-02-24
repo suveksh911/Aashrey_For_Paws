@@ -18,6 +18,10 @@ const Notifications = () => {
         setNotifications(notifications.filter(n => n.id !== id));
     };
 
+    const markAllAsRead = () => {
+        setNotifications(notifications.map(n => ({ ...n, read: true })));
+    };
+
     const getIcon = (type) => {
         switch (type) {
             case 'success': return <FaCheckCircle color="#28a745" />;
@@ -31,6 +35,11 @@ const Notifications = () => {
             <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FaBell /> Notifications
             </h1>
+            <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+                <button onClick={markAllAsRead} className="btn-link" style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
+                    Mark all as read
+                </button>
+            </div>
 
             {notifications.length === 0 ? (
                 <p>No new notifications.</p>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
 import StarRating from '../components/StarRating';
 
 
@@ -8,6 +8,7 @@ function Contact() {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        subject: '',
         message: ''
     });
 
@@ -15,24 +16,14 @@ function Contact() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        try {
-            const response = await fetch('http://localhost:5000/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            if (result.success) {
-                toast.success('Message sent successfully!');
-                setFormData({ name: '', email: '', message: '' });
-            } else {
-                toast.error(result.message);
-            }
-        } catch (err) {
-            toast.error('Failed to send message');
-        }
+        // Save message to localStorage (backend-free demo)
+        const messages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+        messages.push({ ...formData, date: new Date().toLocaleString(), id: Date.now() });
+        localStorage.setItem('contactMessages', JSON.stringify(messages));
+        toast.success('Message sent successfully! We will get back to you soon. 🐾');
+        setFormData({ name: '', email: '', subject: '', message: '' });
     };
 
     return (
@@ -67,6 +58,20 @@ function Contact() {
                             <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Your Email" />
                         </div>
                         <div className="form-group">
+                            <label>Subject / Reason for Contact</label>
+                            <select name="subject" value={formData.subject} onChange={handleChange} required>
+                                <option value="" disabled>Select a reason...</option>
+                                <option value="Adoption Inquiry">🐾 Adoption Inquiry</option>
+                                <option value="Report a Stray">🚨 Report a Stray Animal</option>
+                                <option value="NGO Partnership">🤝 NGO Partnership</option>
+                                <option value="Volunteer">💚 Volunteer with Us</option>
+                                <option value="Lost & Found">🔍 Lost & Found Help</option>
+                                <option value="Donation Query">💰 Donation Query</option>
+                                <option value="General Question">💬 General Question</option>
+                                <option value="Other">📋 Other</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
                             <label>Message</label>
                             <textarea name="message" value={formData.message} onChange={handleChange} required placeholder="How can we help?" rows="5"></textarea>
                         </div>
@@ -78,9 +83,7 @@ function Contact() {
             <FeedbackSection />
 
             <style>{`
-                .contact-page {
-                    padding: 4rem 1rem;
-                }
+                .contact-page { padding: 4rem 1rem; }
                 .page-title {
                     text-align: center;
                     color: var(--color-primary-dark);
@@ -100,74 +103,37 @@ function Contact() {
                     border-radius: var(--radius-lg);
                     box-shadow: var(--shadow-sm);
                 }
-                .contact-info h2 {
-                    color: var(--color-primary);
-                    margin-bottom: 1rem;
-                }
-                .contact-form h2 {
-                     color: var(--color-primary);
-                    margin-bottom: 1rem;
-                }
-                .contact-info p {
-                    margin-bottom: 2rem;
-                    color: var(--color-text-light);
-                }
-                .info-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    margin-bottom: 1rem;
-                }
-                .info-item .icon {
-                    font-size: 1.5rem;
-                }
-                
-                .contact-form form {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1.5rem;
-                }
-                .form-group label {
-                    display: block;
-                    margin-bottom: 0.5rem;
-                    font-weight: 500;
-                }
-                .form-group input, .form-group textarea {
-                    width: 100%;
-                    padding: 0.75rem;
+                .contact-info h2, .contact-form h2 { color: var(--color-primary); margin-bottom: 1rem; }
+                .contact-info p { margin-bottom: 2rem; color: var(--color-text-light); }
+                .info-item { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+                .info-item .icon { font-size: 1.5rem; }
+                .contact-form form { display: flex; flex-direction: column; gap: 1.5rem; }
+                .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+                .form-group input, .form-group textarea, .form-group select {
+                    width: 100%; padding: 0.75rem;
                     border: 1px solid var(--color-border);
                     border-radius: var(--radius-sm);
-                    font-family: inherit;
+                    font-family: inherit; background: #fff;
+                    color: var(--color-text); appearance: auto;
                 }
-                .form-group input:focus, .form-group textarea:focus {
+                .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
                     outline: 2px solid var(--color-primary);
                 }
-
-                /* Feedback Section */
-                 .feedback-section {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    background: #fff;
-                    padding: 2rem;
+                .feedback-section {
+                    max-width: 800px; margin: 0 auto;
+                    background: #fff; padding: 2rem;
                     border-radius: var(--radius-lg);
-                    box-shadow: var(--shadow-md);
-                    text-align: center;
+                    box-shadow: var(--shadow-md); text-align: center;
                 }
-                .feedback-section h2 { margin-bottom: 1rem; color: var(--color-primary-dark); }
+                .feedback-section h2 { margin-bottom: 0.5rem; color: var(--color-primary-dark); }
                 .star-container { display: flex; justify-content: center; margin-bottom: 1rem; }
-                .feedback-form textarea { width: 100%; margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
-
                 @media (max-width: 768px) {
-                    .contact-wrapper {
-                        grid-template-columns: 1fr;
-                        gap: 2rem;
-                    }
+                    .contact-wrapper { grid-template-columns: 1fr; gap: 2rem; }
                 }
             `}</style>
         </div>
     );
 }
-
 
 
 function FeedbackSection() {
@@ -176,101 +142,79 @@ function FeedbackSection() {
     const [allFeedback, setAllFeedback] = useState([]);
     const [editingId, setEditingId] = useState(null);
 
-    useEffect(() => {
-        let storedFeedback = [];
-        try {
-            const item = localStorage.getItem('siteFeedback');
-            if (item) {
-                storedFeedback = JSON.parse(item);
-            }
-        } catch (e) {
-            console.error("Failed to parse feedback", e);
-            localStorage.removeItem('siteFeedback'); // Clear corrupt data
-        }
+    // Logged-in user's name
+    const currentUser = localStorage.getItem('loggedInUser') || 'Anonymous';
 
-        if (!Array.isArray(storedFeedback) || storedFeedback.length === 0) {
-            const mockFeedback = [
-                { id: 1, rating: 5, comment: "Amazing platform! Found my best friend here.", date: "2023-10-15" },
-                { id: 2, rating: 4, comment: "Great initiative, but could use more filter options.", date: "2023-11-02" }
-            ];
-            setAllFeedback(mockFeedback);
-        } else {
-            setAllFeedback(storedFeedback);
+    useEffect(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem('siteFeedback'));
+            if (Array.isArray(stored)) setAllFeedback(stored);
+        } catch {
+            localStorage.removeItem('siteFeedback');
         }
     }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (rating === 0) {
-            toast.warn("Please select a rating!");
-            return;
-        }
+        if (rating === 0) { toast.warn("Please select a star rating!"); return; }
 
-        let existingFeedback = [];
+        let existing = [];
         try {
-            const item = localStorage.getItem('siteFeedback');
-            if (item) {
-                existingFeedback = JSON.parse(item);
-            }
-        } catch (e) {
-            existingFeedback = [];
-        }
-        if (!Array.isArray(existingFeedback)) existingFeedback = [];
+            const raw = localStorage.getItem('siteFeedback');
+            if (raw) existing = JSON.parse(raw);
+        } catch { existing = []; }
+        if (!Array.isArray(existing)) existing = [];
 
+        let updated;
         if (editingId) {
-            // Update existing
-            const updatedFeedback = existingFeedback.map(fb =>
-                fb.id === editingId ? { ...fb, rating, comment, date: new Date().toLocaleDateString() + ' (Edited)' } : fb
+            updated = existing.map(fb =>
+                fb.id === editingId
+                    ? { ...fb, rating, comment, date: new Date().toLocaleDateString() + ' (edited)' }
+                    : fb
             );
-            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
-            setAllFeedback(updatedFeedback);
             toast.success("Feedback updated!");
             setEditingId(null);
         } else {
-            // Add new
             const newFeedback = {
                 id: Date.now(),
+                user: currentUser,
                 rating,
                 comment,
                 date: new Date().toLocaleDateString()
             };
-            const updatedFeedback = [newFeedback, ...existingFeedback];
-            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
-            setAllFeedback(updatedFeedback);
-            toast.success("Thank you for your feedback!");
+            updated = [newFeedback, ...existing];
+            toast.success("Thank you for your feedback! 🐾");
         }
 
+        localStorage.setItem('siteFeedback', JSON.stringify(updated));
+        setAllFeedback(updated);
         setRating(0);
         setComment('');
     };
 
-    const handleEdit = (feedback) => {
-        setRating(feedback.rating);
-        setComment(feedback.comment);
-        setEditingId(feedback.id);
-        window.scrollTo({ top: document.querySelector('.feedback-section').offsetTop, behavior: 'smooth' });
+    const handleEdit = (fb) => {
+        setRating(fb.rating);
+        setComment(fb.comment);
+        setEditingId(fb.id);
+        document.querySelector('.feedback-section')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this review?")) {
-            const updatedFeedback = allFeedback.filter(fb => fb.id !== id);
-            setAllFeedback(updatedFeedback);
-            localStorage.setItem('siteFeedback', JSON.stringify(updatedFeedback));
-            toast.info("Review deleted.");
-
-            // If deleting the item currently being edited, reset form
-            if (editingId === id) {
-                setEditingId(null);
-                setRating(0);
-                setComment('');
-            }
-        }
+        if (!window.confirm("Delete this review?")) return;
+        const updated = allFeedback.filter(fb => fb.id !== id);
+        setAllFeedback(updated);
+        localStorage.setItem('siteFeedback', JSON.stringify(updated));
+        toast.info("Review deleted.");
+        if (editingId === id) { setEditingId(null); setRating(0); setComment(''); }
     };
 
     return (
         <div className="feedback-section">
-            <h2>Rate Your Experience</h2>
-            <p>We value your feedback to help us improve Aashrey For Paws.</p>
+            <h2>⭐ Rate Your Experience</h2>
+            <p style={{ color: '#888', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                Share your experience with Aashrey For Paws to help us improve.
+            </p>
+
             <form onSubmit={handleSubmit} className="feedback-form">
                 <div className="star-container">
                     <StarRating rating={rating} setRating={setRating} />
@@ -280,55 +224,76 @@ function FeedbackSection() {
                     rows="3"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                ></textarea>
-                <button type="submit" className="btn btn-primary">
-                    {editingId ? 'Update Feedback' : 'Submit Feedback'}
-                </button>
-                {editingId && (
-                    <button type="button" className="btn btn-text" onClick={() => {
-                        setEditingId(null);
-                        setRating(0);
-                        setComment('');
-                    }} style={{ marginLeft: '1rem', color: '#666' }}>
-                        Cancel
+                    style={{ width: '100%', marginBottom: '1rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                    <button type="submit" className="btn btn-primary">
+                        {editingId ? '✏️ Update Feedback' : '📝 Submit Feedback'}
                     </button>
-                )}
+                    {editingId && (
+                        <button type="button" className="btn" onClick={() => { setEditingId(null); setRating(0); setComment(''); }}
+                            style={{ background: '#eee', color: '#555' }}>
+                            Cancel
+                        </button>
+                    )}
+                </div>
             </form>
 
-            <div className="reviews-list">
-                <h3>Recent Reviews</h3>
+            <div className="fb-reviews-list">
+                <h3>Recent Reviews ({allFeedback.length})</h3>
                 {allFeedback.length === 0 ? (
-                    <p>No reviews yet. Be the first!</p>
+                    <p style={{ color: '#bbb', fontStyle: 'italic' }}>No reviews yet — be the first! 🐾</p>
                 ) : (
-                    allFeedback.map((fb, idx) => (
-                        <div key={idx} className="review-card">
-                            <div className="review-header">
-                                <StarRating rating={fb.rating} editable={false} />
-                                <div className="review-meta">
-                                    <span className="review-date">{fb.date}</span>
-                                    <div className="review-actions">
-                                        <button onClick={() => handleEdit(fb)} className="icon-btn edit-btn" title="Edit"><FaEdit /></button>
-                                        <button onClick={() => handleDelete(fb.id)} className="icon-btn delete-btn" title="Delete"><FaTrash /></button>
+                    allFeedback.map((fb) => (
+                        <div key={fb.id} className="fb-review-card">
+                            <div className="fb-review-top">
+                                <div className="fb-user-info">
+                                    <FaUserCircle size={28} color="#c8a98a" />
+                                    <div>
+                                        <span className="fb-username">{fb.user || 'Anonymous'}</span>
+                                        <span className="fb-date">{fb.date}</span>
                                     </div>
                                 </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <StarRating rating={fb.rating} editable={false} />
+                                    {/* Only the author sees Edit / Delete */}
+                                    {fb.user === currentUser && (
+                                        <div className="review-actions">
+                                            <button onClick={() => handleEdit(fb)} className="icon-btn edit-btn" title="Edit"><FaEdit /></button>
+                                            <button onClick={() => handleDelete(fb.id)} className="icon-btn delete-btn" title="Delete"><FaTrash /></button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <p className="review-text">"{fb.comment}"</p>
+                            {fb.comment && <p className="fb-comment">"{fb.comment}"</p>}
                         </div>
                     ))
                 )}
             </div>
 
             <style>{`
-                .reviews-list { margin-top: 3rem; text-align: left; border-top: 1px solid #eee; padding-top: 2rem; }
-                .reviews-list h3 { color: var(--color-primary-dark); margin-bottom: 1.5rem; }
-                .review-card { background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-                .review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-                .review-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
-                .review-date { font-size: 0.85rem; color: #888; }
-                .review-text { font-style: italic; color: #555; }
-                .review-actions { display: flex; gap: 0.5rem; }
+                .fb-reviews-list {
+                    margin-top: 2.5rem; text-align: left;
+                    border-top: 1px solid #f0ece8; padding-top: 2rem;
+                }
+                .fb-reviews-list h3 { color: var(--color-primary-dark); margin-bottom: 1.25rem; }
+                .fb-review-card {
+                    background: #fdf8f5; padding: 1rem 1.25rem;
+                    border-radius: 10px; margin-bottom: 1rem;
+                    border: 1px solid #f0e8e2;
+                }
+                .fb-review-top {
+                    display: flex; justify-content: space-between;
+                    align-items: center; margin-bottom: 0.5rem;
+                    flex-wrap: wrap; gap: 8px;
+                }
+                .fb-user-info { display: flex; align-items: center; gap: 10px; }
+                .fb-username { display: block; font-weight: 700; font-size: 0.9rem; color: #5d4037; }
+                .fb-date { display: block; font-size: 0.78rem; color: #aaa; }
+                .fb-comment { font-style: italic; color: #666; margin: 0; font-size: 0.93rem; line-height: 1.5; }
+                .review-actions { display: flex; gap: 0.4rem; }
                 .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s; }
-                .icon-btn:hover { transform: scale(1.1); }
+                .icon-btn:hover { transform: scale(1.15); }
                 .edit-btn { color: #2196F3; }
                 .delete-btn { color: #F44336; }
             `}</style>

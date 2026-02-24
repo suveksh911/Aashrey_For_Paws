@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
+import MultiImageUpload from '../components/MultiImageUpload';
 
 function AddPet() {
     const [petInfo, setPetInfo] = useState({
@@ -15,9 +16,8 @@ function AddPet() {
         description: '',
         healthStatus: 'Healthy',
         adoptionStatus: 'Available',
-        image: ''
+        images: []
     });
-    const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -26,16 +26,18 @@ function AddPet() {
         setPetInfo((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPetInfo((prev) => ({ ...prev, image: reader.result }));
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
+    const handleImagesChange = (files) => {
+        // Convert files to base64 for local storage mock
+        Promise.all(files.map(file => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        })).then(base64Images => {
+            setPetInfo(prev => ({ ...prev, images: base64Images }));
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -50,22 +52,30 @@ function AddPet() {
                 return;
             }
 
-            
+
             const newPet = {
                 ...petInfo,
                 _id: Date.now().toString(),
-                adopted: false, 
-                createdAt: new Date().toISOString()
+                adopted: false,
+                image: petInfo.images[0] || '', // Main image for backward compat
+                images: petInfo.images,
+                createdAt: new Date().toISOString(),
+                ownerId: user?.name || 'Anonymous',
+                ownerRole: user?.role || 'NGO'
             };
 
-           
+
             const currentPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
             localStorage.setItem('ngoPets', JSON.stringify([...currentPets, newPet]));
 
-           
+
             setTimeout(() => {
                 toast.success('Pet added successfully (Local)!');
-                navigate('/ngo');
+                if (user?.role === 'Owner') {
+                    navigate('/user');
+                } else {
+                    navigate('/ngo');
+                }
             }, 500);
 
         } catch (error) {
@@ -132,13 +142,8 @@ function AddPet() {
                     </div>
 
                     <div className="form-group">
-                        <label>Pet Image</label>
-                        <input type="file" accept="image/*" onChange={handleImageChange} />
-                        {imagePreview && (
-                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                                <img src={imagePreview} alt="Preview" style={{ maxWidth: '200px', borderRadius: '8px' }} />
-                            </div>
-                        )}
+                        <label>Pet Images</label>
+                        <MultiImageUpload onImagesChange={handleImagesChange} maxImages={5} />
                     </div>
 
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '1rem' }}>

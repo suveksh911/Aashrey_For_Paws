@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import { FaUsers, FaPaw, FaClipboardList, FaTrash, FaCheck } from 'react-icons/fa';
+import { FaUsers, FaPaw, FaClipboardList, FaTrash, FaCheck, FaHeart } from 'react-icons/fa';
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -16,28 +16,33 @@ function AdminDashboard() {
 
     const fetchDashboardData = async () => {
         try {
-            
+            // Mock Data for demonstration
             const mockUsers = [
-                { _id: '1', name: 'John Doe', email: 'john@example.com', role: 'Adopter', isVerified: true },
-                { _id: '2', name: 'Paw Helpers', email: 'contact@pawhelpers.org', role: 'NGO', isVerified: false },
-                { _id: '3', name: 'Jane Smith', email: 'jane@example.com', role: 'Owner', isVerified: true },
+                { _id: '1', name: 'Anu Budhathoki', email: 'anu@example.com', role: 'Adopter', isVerified: true, joined: '2025-10-01' },
+                { _id: '2', name: 'Paw Helpers', email: 'contact@pawhelpers.org', role: 'NGO', isVerified: false, joined: '2026-10-05' },
+                { _id: '3', name: 'Jane shakya', email: 'jane@example.com', role: 'Owner', isVerified: true, joined: '2025-10-10' },
+                { _id: '4', name: 'Kabita Shah', email: 'kabita@example.com', role: 'Adopter', isVerified: true, joined: '2025-10-12' },
+                { _id: '5', name: 'Safe Haven', email: 'info@safehaven.org', role: 'NGO', isVerified: true, joined: '2025-10-15' },
             ];
             const mockPets = [
-                { _id: '101', name: 'Buddy', type: 'Dog', status: 'Available', owner: 'Paw Helpers' },
-                { _id: '102', name: 'Whiskers', type: 'Cat', status: 'Adopted', owner: 'John Doe' },
-                { _id: '103', name: 'Rocky', type: 'Dog', status: 'Pending', owner: 'Paw Helpers' },
+                { _id: '101', name: 'Buddy', type: 'Dog', status: 'Available', owner: 'Paw Helpers', date: '2025-10-06' },
+                { _id: '102', name: 'Whiskers', type: 'Cat', status: 'Adopted', owner: 'Aayaush Chaudhary', date: '2026-10-02' },
+                { _id: '103', name: 'Rocky', type: 'Dog', status: 'Pending', owner: 'Paw Helpers', date: '2025-10-08' },
+                { _id: '104', name: 'Goldie', type: 'Bird', status: 'Available', owner: 'Safe Haven', date: '2025-10-16' },
             ];
 
-           
+            // Calculate Stats
             const adoptionRequests = JSON.parse(localStorage.getItem('adoptionRequests')) || [];
             const pendingRequestsCount = adoptionRequests.filter(req => req.status === 'Pending').length;
+            const totalAdoptions = mockPets.filter(p => p.status === 'Adopted').length;
 
             setUsers(mockUsers);
             setPets(mockPets);
             setStats({
                 users: mockUsers.length,
                 pets: mockPets.length,
-                requests: pendingRequestsCount 
+                requests: pendingRequestsCount,
+                adoptions: totalAdoptions
             });
             setLoading(false);
         } catch (error) {
@@ -88,27 +93,76 @@ function AdminDashboard() {
             </div>
 
             {activeTab === 'overview' && (
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="icon"><FaUsers /></div>
-                        <div className="info">
-                            <h3>Total Users</h3>
-                            <p>{stats.users}</p>
+                <div className="overview-section">
+                    <div className="stats-grid">
+                        <div className="stat-card blue">
+                            <div className="icon"><FaUsers /></div>
+                            <div className="info">
+                                <h3>Total Users</h3>
+                                <p>{stats.users}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card green">
+                            <div className="icon"><FaPaw /></div>
+                            <div className="info">
+                                <h3>Total Pets</h3>
+                                <p>{stats.pets}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card orange">
+                            <div className="icon"><FaClipboardList /></div>
+                            <div className="info">
+                                <h3>Pending Requests</h3>
+                                <p>{stats.requests}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card purple">
+                            <div className="icon"><FaHeart /></div>
+                            <div className="info">
+                                <h3>Total Adoptions</h3>
+                                <p>{stats.adoptions || 0}</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="icon"><FaPaw /></div>
-                        <div className="info">
-                            <h3>Total Pets</h3>
-                            <p>{stats.pets}</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="icon"><FaClipboardList /></div>
-                        <div className="info">
-                            <h3>Pending Requests</h3>
-                            <p>{stats.requests}</p>
-                        </div>
+
+                    <div className="recent-activity">
+                        <h2>Recent Activity</h2>
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>User/Pet</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>New User Registration</td>
+                                    <td>Safe Haven (NGO)</td>
+                                    <td>2023-10-15</td>
+                                    <td><span className="badge success">Verified</span></td>
+                                </tr>
+                                <tr>
+                                    <td>New Pet Added</td>
+                                    <td>Goldie (Bird)</td>
+                                    <td>2023-10-16</td>
+                                    <td><span className="badge available">Available</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Adoption Request</td>
+                                    <td>momo(Dog)</td>
+                                    <td>2023-10-14</td>
+                                    <td><span className="badge pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>New User Registration</td>
+                                    <td>Kabita shah (Adopter)</td>
+                                    <td>2023-10-12</td>
+                                    <td><span className="badge success">Verified</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}

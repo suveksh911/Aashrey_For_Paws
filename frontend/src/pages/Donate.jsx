@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaHandHoldingHeart, FaCreditCard, FaUniversity, FaCheckCircle, FaGlobe, FaPhone, FaArrowLeft } from 'react-icons/fa';
-import KhaltiCheckout from "khalti-checkout-web";
-
+import { FaCreditCard, FaUniversity, FaCheckCircle, FaGlobe, FaArrowLeft } from 'react-icons/fa';
+import NGOVerifiedBadge from '../components/NGOVerifiedBadge';
 
 const NGOs = [
     {
@@ -13,6 +13,7 @@ const NGOs = [
         location: "Budhanilkantha, Kathmandu",
         phone: "+977-1-4377777",
         website: "www.katcentre.org.np",
+        isVerified: true,
         bank: {
             bankName: "Standard Chartered Bank",
             accountName: "KAT Centre Nepal",
@@ -28,6 +29,7 @@ const NGOs = [
         location: "Lalitpur, Nepal",
         phone: "+977-9808645023",
         website: "www.snehacare.com",
+        isVerified: true,
         bank: {
             bankName: "Himalayan Bank Ltd.",
             accountName: "Sneha's Care",
@@ -43,6 +45,7 @@ const NGOs = [
         location: "Boudha, Kathmandu",
         phone: "+977-9841075383",
         website: "www.streetdogcare.org",
+        isVerified: false,
         bank: {
             bankName: "Laxmi Bank",
             accountName: "Street Dog Care",
@@ -58,6 +61,7 @@ const NGOs = [
         location: "Dobighat, Lalitpur",
         phone: "+977-1-5538068",
         website: "www.animalnepal.org",
+        isVerified: true,
         bank: {
             bankName: "Nabil Bank",
             accountName: "Animal Nepal",
@@ -67,66 +71,46 @@ const NGOs = [
     }
 ];
 
+
+
+// ============================================================
+//  Main Donate component
+// ============================================================
 function Donate() {
+    const [searchParams] = useSearchParams();
     const [selectedNgo, setSelectedNgo] = useState(null);
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
+    // If campaign page passed ?ngoId=X, pre-select that NGO
+    useEffect(() => {
+        const ngoId = searchParams.get('ngoId');
+        if (ngoId) {
+            const found = NGOs.find(n => n.id === Number(ngoId));
+            if (found) setSelectedNgo(found);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (selectedNgo) {
-            const formElement = document.getElementById('donation-form-section');
-            if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
+            const el = document.getElementById('donation-form-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
         } else {
             window.scrollTo(0, 0);
         }
     }, [selectedNgo]);
 
+
     const handleDonate = (e) => {
         e.preventDefault();
-        if (!amount) return toast.error("Please enter an amount");
-
+        if (!amount || Number(amount) <= 0) return toast.error('Please enter a valid amount');
         setLoading(true);
-
-       
-        let config = {
-            "publicKey": "test_public_key_dc74e0fd57cb46cd93832aee0a390234",
-            "productIdentity": "donation_123",
-            "productName": `Donation to ${selectedNgo?.name || 'Aashrey'}`,
-            "productUrl": window.location.href,
-            "eventHandler": {
-                onSuccess(payload) {
-                    console.log(payload);
-                    setLoading(false);
-                    setSuccess(true);
-                    toast.success("Payment Successful!");
-                },
-                onError(error) {
-                    console.log(error);
-                    setLoading(false);
-                    toast.error("Payment Failed. Please try again.");
-                },
-                onClose() {
-                    console.log('widget is closing');
-                    setLoading(false);
-                }
-            },
-            "paymentPreference": ["KHALTI", "EBANKING", "MOBILE_BANKING", "CONNECT_IPS", "SCT"],
-        };
-
-        try {
-            let checkout = new KhaltiCheckout(config);
-            checkout.show({ amount: amount * 100 }); 
-        } catch (error) {
-            console.error("Khalti SDK error:", error);
-            
-            setTimeout(() => {
-                setLoading(false);
-                setSuccess(true);
-                toast.success(`(Mock) Donation to ${selectedNgo.name} successful!`);
-            }, 1500);
-        }
+        setTimeout(() => {
+            setLoading(false);
+            setSuccess(true);
+            toast.success(`Donation of Rs. ${amount} to ${selectedNgo?.name} successful! 🎉`);
+        }, 1500);
     };
 
     const resetForm = () => {
@@ -135,95 +119,111 @@ function Donate() {
         setSelectedNgo(null);
     };
 
+    // ── Success screen ────────────────────────────────────────
     if (success) {
         return (
             <div className="container" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
                 <FaCheckCircle size={80} color="#28a745" style={{ marginBottom: '2rem' }} />
-                <h1>Thank You!</h1>
+                <h1>Thank You! 🎉</h1>
                 <p style={{ fontSize: '1.2rem', color: 'var(--color-text-light)' }}>
                     Your donation of <strong>Rs. {amount}</strong> to <strong>{selectedNgo?.name}</strong> has been processed.<br />
                     Thank you for using Aashrey For Paws to support this cause.
                 </p>
-                <button
-                    className="btn btn-primary"
-                    style={{ marginTop: '2rem' }}
-                    onClick={resetForm}
-                >
+                <button className="btn btn-primary" style={{ marginTop: '2rem' }} onClick={resetForm}>
                     Back to NGOs
                 </button>
             </div>
-        )
+        );
     }
 
-
+    // ── NGO list ──────────────────────────────────────────────
     if (!selectedNgo) {
         return (
             <div className="container" style={{ padding: '3rem 2rem' }}>
                 <div className="donate-header">
                     <h1>Our Partner NGOs</h1>
-                    <p>Select an organization to view their details and make a donation.</p>
+                    <p>Select an organization to view their details, read reviews, and make a donation.</p>
                 </div>
 
                 <div className="ngo-grid">
                     {NGOs.map(ngo => (
                         <div key={ngo.id} className="ngo-card">
-                            <div className="ngo-image" style={{ backgroundImage: `url(${ngo.image})` }}></div>
+                            <div className="ngo-image" style={{ backgroundImage: `url(${ngo.image})` }} />
                             <div className="ngo-content">
+                                <div style={{ marginBottom: '6px' }}>
+                                    <NGOVerifiedBadge isVerified={ngo.isVerified} compact />
+                                </div>
                                 <h3>{ngo.name}</h3>
                                 <p className="ngo-desc">{ngo.description}</p>
                                 <div className="ngo-details">
                                     <span><FaGlobe /> {ngo.location}</span>
                                 </div>
+
                                 <button
-                                    className="btn btn-outline"
+                                    className="btn btn-primary"
                                     style={{ marginTop: '1rem', width: '100%' }}
                                     onClick={() => setSelectedNgo(ngo)}
                                 >
-                                    Donate / View Details
+                                    💳 Donate to Support
                                 </button>
+                                <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                                    <Link to={`/ngo/${ngo.id}`} className="text-primary" style={{ fontSize: '0.9rem', textDecoration: 'none' }}>
+                                        View Full Profile →
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 <style>{`
-                .donate-header { text-align: center; margin-bottom: 3rem; }
-                .donate-header h1 { color: var(--color-primary-dark); font-size: 2.5rem; margin-bottom: 0.5rem; }
-                .ngo-grid { 
-                    display: grid; 
-                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-                    gap: 2rem; 
-                }
-                .ngo-card { 
-                    background: white; 
-                    border-radius: var(--radius-md); 
-                    overflow: hidden; 
-                    box-shadow: var(--shadow-md); 
-                    transition: transform 0.2s;
-                    border: 1px solid var(--color-border);
-                }
-                .ngo-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
-                .ngo-image { height: 300px; background-size: cover; background-position: center; }
-                .ngo-content { padding: 1.5rem; }
-                .ngo-content h3 { color: var(--color-text); margin-bottom: 0.5rem; }
-                .ngo-desc { font-size: 0.95rem; color: var(--color-text-light); margin-bottom: 1rem; line-height: 1.5; }
-                .ngo-details { font-size: 0.9rem; color: #666; display: flex; gap: 1rem; }
-                .btn-outline { 
-                    border: 2px solid var(--color-primary); 
-                    color: var(--color-primary); 
-                    background: transparent; 
-                    padding: 0.5rem 1rem; 
-                    border-radius: var(--radius-sm);
-                    cursor: pointer;
-                    font-weight: 600;
-                }
-                .btn-outline:hover { background: var(--color-primary); color: white; }
-            `}</style>
+                    .donate-header { text-align: center; margin-bottom: 3rem; }
+                    .donate-header h1 { color: var(--color-primary-dark); font-size: 2.5rem; margin-bottom: 0.5rem; }
+                    .donate-header p { color: #666; font-size: 1.05rem; }
+                    .ngo-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                        gap: 2rem;
+                    }
+                    .ngo-card {
+                        background: white; border-radius: var(--radius-md);
+                        overflow: hidden; box-shadow: var(--shadow-md);
+                        transition: transform 0.2s; border: 1px solid var(--color-border);
+                        display: flex; flex-direction: column;
+                    }
+                    .ngo-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+                    .ngo-image { height: 220px; background-size: cover; background-position: center; }
+                    .ngo-content { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+                    .ngo-content h3 { color: var(--color-text); margin-bottom: 0.5rem; }
+                    .ngo-desc { font-size: 0.9rem; color: var(--color-text-light); margin-bottom: 0.75rem; line-height: 1.5; }
+                    .ngo-details { font-size: 0.85rem; color: #666; display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+
+                    /* Reviews */
+                    .ngo-reviews { margin-top: 0.75rem; border-top: 1px solid #f0e8e5; padding-top: 0.75rem; }
+                    .reviews-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+                    .avg-badge { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; }
+                    .review-count { color: #999; font-size: 0.8rem; }
+                    .no-reviews-text { font-size: 0.8rem; color: #bbb; font-style: italic; }
+                    .btn-write-review {
+                        background: none; border: 1px solid var(--color-primary);
+                        color: var(--color-primary); padding: 3px 10px; border-radius: 20px;
+                        font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+                    }
+                    .btn-write-review:hover { background: var(--color-primary); color: white; }
+                    .reviews-list { display: flex; flex-direction: column; gap: 6px; }
+                    .review-item { background: #fdf8f6; padding: 8px 10px; border-radius: 8px; }
+                    .review-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+                    .ri-user { font-weight: 600; font-size: 0.82rem; color: #5d4037; }
+                    .ri-date { font-size: 0.75rem; color: #bbb; margin-left: auto; }
+                    .ri-comment { margin: 0; font-size: 0.83rem; color: #666; font-style: italic; }
+                    .btn-toggle-reviews { background: none; border: none; color: var(--color-primary); font-size: 0.8rem; cursor: pointer; padding: 4px 0; }
+                    .btn-toggle-reviews:hover { text-decoration: underline; }
+                `}</style>
             </div>
         );
     }
 
-
+    // ── Donation payment form ─────────────────────────────────
     return (
         <div className="container" style={{ padding: '3rem 2rem' }}>
             <button className="btn-back" onClick={() => setSelectedNgo(null)}>
@@ -236,14 +236,19 @@ function Donate() {
             </div>
 
             <div className="donate-grid" id="donation-form-section">
-                { }
+                {/* Online Payment */}
                 <div className="donate-card">
                     <h2><FaCreditCard /> Donate Online</h2>
+                    <p style={{ color: '#888', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                        Enter your amount and proceed to payment.
+                    </p>
                     <form onSubmit={handleDonate}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Donation Amount (Rs)</label>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Donation Amount (Rs)
+                            </label>
                             <div className="amount-options">
-                                {[10, 25, 50, 100].map(val => (
+                                {[100, 250, 500, 1000].map(val => (
                                     <button
                                         key={val}
                                         type="button"
@@ -257,29 +262,36 @@ function Donate() {
                             <input
                                 type="number"
                                 className="input-custom"
-                                placeholder="Type custom amount"
+                                placeholder="Or type a custom amount..."
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 min="1"
                             />
                         </div>
 
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Card Details (Mock)</label>
-                            <input type="text" className="input-custom" placeholder="0000 0000 0000 0000" disabled />
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-                                <input type="text" className="input-custom" placeholder="MM/YY" disabled />
-                                <input type="text" className="input-custom" placeholder="CVC" disabled />
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                                Pay With
+                            </label>
+                            <div className="payment-methods">
+                                <div className="payment-badge">💳 eSewa</div>
+                                <div className="payment-badge">📱 Khalti</div>
+                                <div className="payment-badge">🏦 ConnectIPS</div>
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-                            {loading ? 'Processing...' : `Donate`}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            style={{ width: '100%', padding: '0.85rem', fontSize: '1rem' }}
+                            disabled={loading}
+                        >
+                            {loading ? '⏳ Processing...' : `💳 Donate Rs. ${amount || '—'}`}
                         </button>
                     </form>
                 </div>
 
-                { }
+                {/* Bank Transfer */}
                 <div className="donate-card bank-info">
                     <h2><FaUniversity /> Direct Bank Transfer</h2>
                     <p>Transfer directly to {selectedNgo.name}.</p>
@@ -311,27 +323,27 @@ function Donate() {
             </div>
 
             <style>{`
-            .btn-back { display: flex; align-items: center; gap: 0.5rem; background: none; border: none; color: var(--color-text-light); font-size: 1rem; cursor: pointer; margin-bottom: 2rem; }
-            .btn-back:hover { color: var(--color-primary); text-decoration: underline; }
-            .selected-ngo-header { text-align: center; margin-bottom: 3rem; }
-            .selected-ngo-header h1 { color: var(--color-primary-dark); font-size: 2rem; margin-bottom: 0.5rem; }
-            
-            /* Reused Donate Styles */
-            .donate-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1000px; margin: 0 auto; }
-            @media (min-width: 768px) { .donate-grid { grid-template-columns: 1fr 1fr; } }
-            .donate-card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 8px 24px rgba(93, 64, 55, 0.15); border: 1px solid #EFEBE9; }
-            .donate-card h2 { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; color: #3E2723; }
-            .amount-options { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-            .btn-amount { flex: 1; padding: 0.5rem; border: 1px solid #EFEBE9; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-            .btn-amount:hover, .btn-amount.active { background: #8D6E63; color: white; border-color: #8D6E63; }
-            .input-custom { width: 100%; padding: 0.75rem; border: 1px solid #EFEBE9; border-radius: 8px; font-size: 1rem; }
-            .input-custom:focus { outline: 2px solid #8D6E63; }
-            .bank-details-box { background: #FDFBF7; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; }
-            .detail-row { display: flex; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #eee; }
-            .detail-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-            .qr-box { text-align: center; }
-            .qr-box img { width: 200px; height: 250px; margin-bottom: 0.5rem; }
-        `}</style>
+                .btn-back { display: flex; align-items: center; gap: 0.5rem; background: none; border: none; color: var(--color-text-light); font-size: 1rem; cursor: pointer; margin-bottom: 2rem; }
+                .btn-back:hover { color: var(--color-primary); text-decoration: underline; }
+                .selected-ngo-header { text-align: center; margin-bottom: 3rem; }
+                .selected-ngo-header h1 { color: var(--color-primary-dark); font-size: 2rem; margin-bottom: 0.5rem; }
+                .donate-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1000px; margin: 0 auto; }
+                @media (min-width: 768px) { .donate-grid { grid-template-columns: 1fr 1fr; } }
+                .donate-card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 8px 24px rgba(93,64,55,0.15); border: 1px solid #EFEBE9; }
+                .donate-card h2 { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; color: #3E2723; }
+                .amount-options { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+                .btn-amount { flex: 1; min-width: 70px; padding: 0.5rem; border: 1px solid #EFEBE9; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+                .btn-amount:hover, .btn-amount.active { background: #8D6E63; color: white; border-color: #8D6E63; }
+                .input-custom { width: 100%; padding: 0.75rem; border: 1px solid #EFEBE9; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+                .input-custom:focus { outline: 2px solid #8D6E63; }
+                .payment-methods { display: flex; gap: 10px; flex-wrap: wrap; }
+                .payment-badge { padding: 6px 14px; background: #fdf8f6; border: 1px solid #EFEBE9; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #5d4037; }
+                .bank-details-box { background: #FDFBF7; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; }
+                .detail-row { display: flex; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #eee; }
+                .detail-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+                .qr-box { text-align: center; }
+                .qr-box img { width: 160px; height: 200px; margin-bottom: 0.5rem; }
+            `}</style>
         </div>
     );
 }

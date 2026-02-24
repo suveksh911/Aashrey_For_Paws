@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import MultiImageUpload from '../components/MultiImageUpload';
 
 const LOST_FOUND = [
     {
@@ -56,7 +57,8 @@ function LostFound() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         name: '', breed: '', type: 'Lost', description: '', location: '', contactInfo: '',
-        category: 'Dog', age: 'Unknown', status: 'Pending', image: ''
+        category: 'Dog', age: 'Unknown', status: 'Pending', image: '',
+        color: '', gender: 'Unknown', condition: 'Unknown', dateFound: new Date().toISOString().split('T')[0]
     });
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -67,13 +69,13 @@ function LostFound() {
 
     const fetchPets = async () => {
         try {
-            
+
             const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
 
-          
+
             const allPets = [...localPets, ...LOST_FOUND];
 
-           
+
             setPets(allPets.filter(p => p.type === activeTab));
 
         } catch (err) {
@@ -82,18 +84,47 @@ function LostFound() {
         }
     };
 
+    const [imageFiles, setImageFiles] = useState([]);
+
+    const handleImagesChange = (files) => {
+        setImageFiles(files);
+    };
+
+    const convertToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        let imageUrl = 'https://via.placeholder.com/600x400?text=No+Image';
+
+        if (imageFiles.length > 0) {
+            try {
+                // For demo, just take the first image
+                imageUrl = await convertToBase64(imageFiles[0]);
+            } catch (error) {
+                console.error("Error converting image", error);
+                toast.error("Failed to process image");
+                return;
+            }
+        } else if (formData.image) {
+            imageUrl = formData.image;
+        }
 
         const newPet = {
             _id: Date.now().toString(),
             ...formData,
             type: activeTab,
-            image: formData.image || 'https://via.placeholder.com/600x400?text=No+Image', 
+            image: imageUrl,
             createdAt: new Date().toISOString()
         };
 
-       
         const localPets = JSON.parse(localStorage.getItem('lostFoundPets')) || [];
         localStorage.setItem('lostFoundPets', JSON.stringify([newPet, ...localPets]));
 
@@ -101,8 +132,10 @@ function LostFound() {
         setShowForm(false);
         setFormData({
             name: '', breed: '', type: 'Lost', description: '', location: '', contactInfo: '',
-            category: 'Dog', age: 'Unknown', status: 'Pending', image: ''
+            category: 'Dog', age: 'Unknown', status: 'Pending', image: '',
+            color: '', gender: 'Unknown', condition: 'Unknown', dateFound: new Date().toISOString().split('T')[0]
         });
+        setImageFiles([]);
         fetchPets();
     };
 
@@ -133,6 +166,7 @@ function LostFound() {
 
             {showForm && (
                 <form className="report-form" onSubmit={handleSubmit}>
+                    <h3>Report {activeTab} Pet</h3>
                     <div className="form-row">
                         <input type="text" placeholder="Pet Name (if known)" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                         <input type="text" placeholder="Breed" value={formData.breed} onChange={e => setFormData({ ...formData, breed: e.target.value })} required />
@@ -141,10 +175,49 @@ function LostFound() {
                         <input type="text" placeholder="Location" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required />
                         <input type="text" placeholder="Contact Info" value={formData.contactInfo} onChange={e => setFormData({ ...formData, contactInfo: e.target.value })} required />
                     </div>
-                    <div className="form-row">
-                        <input type="text" placeholder="Image URL (Public link)" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} />
+
+                    {/* Extra fields for Found pets */}
+                    {activeTab === 'Found' && (
+                        <>
+                            <div className="form-row">
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', color: '#666' }}>Pet Color / Markings</label>
+                                    <input type="text" placeholder="e.g. Brown with white spots" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', color: '#666' }}>Date Found</label>
+                                    <input type="date" value={formData.dateFound} onChange={e => setFormData({ ...formData, dateFound: e.target.value })} max={new Date().toISOString().split('T')[0]} />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', color: '#666' }}>Gender</label>
+                                    <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+                                        <option value="Unknown">Unknown</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', color: '#666' }}>Condition When Found</label>
+                                    <select value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+                                        <option value="Unknown">Unknown</option>
+                                        <option value="Healthy">Healthy</option>
+                                        <option value="Injured">Injured</option>
+                                        <option value="Malnourished">Malnourished</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Replaced Text Input with MultiImageUpload */}
+                    <div className="form-section">
+                        <label>Upload Image:</label>
+                        <MultiImageUpload onImagesChange={handleImagesChange} maxImages={1} />
                     </div>
-                    <textarea placeholder="Description" rows="3" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} required></textarea>
+
+                    <textarea placeholder="Description (Color, distinct marks, etc.)" rows="3" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} required></textarea>
                     <button type="submit" className="btn btn-primary">Submit Report</button>
                 </form>
             )}
@@ -158,6 +231,22 @@ function LostFound() {
                         <div className="listing-info">
                             <h3>{pet.name}</h3>
                             <p className="location">📍 {pet.location}</p>
+                            {pet.type === 'Found' && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '6px 0' }}>
+                                    {pet.condition && pet.condition !== 'Unknown' && (
+                                        <span style={{ background: pet.condition === 'Healthy' ? '#d4edda' : pet.condition === 'Injured' ? '#f8d7da' : '#fff3cd', color: pet.condition === 'Healthy' ? '#155724' : pet.condition === 'Injured' ? '#721c24' : '#856404', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>🐾 {pet.condition}</span>
+                                    )}
+                                    {pet.color && (
+                                        <span style={{ background: '#e8f4fd', color: '#0c5460', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px' }}>🎨 {pet.color}</span>
+                                    )}
+                                    {pet.gender && pet.gender !== 'Unknown' && (
+                                        <span style={{ background: '#f3e5f5', color: '#6a1b9a', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px' }}>{pet.gender === 'Male' ? '♂' : '♀'} {pet.gender}</span>
+                                    )}
+                                    {pet.dateFound && (
+                                        <span style={{ background: '#f5f5f5', color: '#555', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px' }}>📅 Found: {pet.dateFound}</span>
+                                    )}
+                                </div>
+                            )}
                             <p className="desc">{pet.description}</p>
                             <div className="contact-box">Contact: {pet.contactInfo}</div>
                         </div>

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
 function AdoptionRequest() {
-    const { id } = useParams(); 
+    const { id } = useParams();
     const location = useLocation();
     const petName = location.state?.petName || 'the pet';
 
@@ -13,7 +13,7 @@ function AdoptionRequest() {
 
     const [formData, setFormData] = useState({
         fullName: user?.name || '',
-        email: user?.email || '', 
+        email: user?.email || '',
         phone: '',
         address: '',
         reason: '',
@@ -28,23 +28,34 @@ function AdoptionRequest() {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-       
         const newRequest = {
-            id: Date.now(),
+            id: Date.now().toString(),
             petId: id,
             petName: petName,
-            userId: user?.name, 
+            applicantName: formData.fullName,
+            userId: user?.name,
             ...formData,
             status: 'Pending',
             date: new Date().toLocaleDateString()
         };
 
-       
+        // Save adoption request
         const existingRequests = JSON.parse(localStorage.getItem('adoptionRequests')) || [];
         localStorage.setItem('adoptionRequests', JSON.stringify([...existingRequests, newRequest]));
 
+        // Push a notification for the owner/NGO to see
+        const ownerNotif = {
+            id: Date.now().toString() + '_notif',
+            type: 'info',
+            message: `${formData.fullName} wants to adopt "${petName}". Review the request in your dashboard.`,
+            date: new Date().toLocaleDateString(),
+            read: false
+        };
+        const existingNotifs = JSON.parse(localStorage.getItem('appNotifications')) || [];
+        localStorage.setItem('appNotifications', JSON.stringify([ownerNotif, ...existingNotifs]));
+
         toast.success(`Adoption request for ${petName} submitted successfully!`);
-        navigate('/user'); 
+        navigate('/user');
     };
 
     return (

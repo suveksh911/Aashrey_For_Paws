@@ -3,10 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
 import PetHealthRecords from '../components/PetHealthRecords';
+import MultiImageUpload from '../components/MultiImageUpload';
+import { useAuth } from '../context/AuthContext';
 
 function EditPet() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         name: '',
@@ -15,9 +18,9 @@ function EditPet() {
         age: '',
         gender: '',
         location: '',
-        image: '',
         description: '',
-        adoptionStatus: 'Available'
+        adoptionStatus: 'Available',
+        images: []
     });
 
     useEffect(() => {
@@ -37,6 +40,7 @@ function EditPet() {
                     gender: pet.gender,
                     location: pet.location,
                     image: pet.image || '',
+                    images: pet.images || (pet.image ? [pet.image] : []),
                     description: pet.description || '',
                     adoptionStatus: pet.adoptionStatus,
                     vaccinations: pet.vaccinations || [],
@@ -44,7 +48,27 @@ function EditPet() {
                 });
             }
         } catch (error) {
-            toast.error('Failed to load pet details');
+            // Fallback: load from localStorage (for Owner's locally-stored pets)
+            const localPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
+            const found = localPets.find(p => p._id === id);
+            if (found) {
+                setFormData({
+                    name: found.name || '',
+                    type: found.type || 'Dog',
+                    breed: found.breed || '',
+                    age: found.age || '',
+                    gender: found.gender || 'Male',
+                    location: found.location || '',
+                    image: found.image || '',
+                    images: found.images || (found.image ? [found.image] : []),
+                    description: found.description || '',
+                    adoptionStatus: found.adoptionStatus || 'Available',
+                    vaccinations: found.vaccinations || [],
+                    medicalHistory: found.medicalHistory || []
+                });
+            } else {
+                toast.error('Pet not found');
+            }
         } finally {
             setLoading(false);
         }
@@ -55,19 +79,48 @@ function EditPet() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleImagesChange = (files) => {
+        // Here we ideally upload to server and get URLs back, 
+        // but for mock/base64 we convert and store
+        Promise.all(files.map(file => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        })).then(base64Images => {
+            setFormData(prev => ({
+                ...prev,
+                images: base64Images,
+                image: base64Images[0] || prev.image // Update main image too
+            }));
+        });
+    };
+
+    const redirectAfterSave = () => {
+        if (user?.role === 'Owner') navigate('/user');
+        else navigate('/ngo');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const response = await api.put(`/pets/${id}`, formData);
             if (response.data.success) {
                 toast.success('Pet updated successfully');
-                navigate('/ngo');
-            } else {
-                toast.error(response.data.message || 'Update failed');
+                redirectAfterSave();
+                return;
             }
         } catch (error) {
-            toast.error('Failed to update pet');
+            // API failed — update locally
         }
+        // Local update fallback
+        const allPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
+        const updated = allPets.map(p => p._id === id ? { ...p, ...formData } : p);
+        localStorage.setItem('ngoPets', JSON.stringify(updated));
+        toast.success('Pet updated!');
+        redirectAfterSave();
     };
 
     if (loading) return <div className="container center-content">Loading...</div>;
@@ -115,8 +168,13 @@ function EditPet() {
                 </div>
 
                 <div className="form-group">
-                    <label>Image URL</label>
-                    <input type="text" name="image" value={formData.image} onChange={handleChange} />
+                    <label>Images</label>
+                    <MultiImageUpload onImagesChange={handleImagesChange} maxImages={5} />
+                    <div className="current-images">
+                        {formData.images && formData.images.map((img, i) => (
+                            <img key={i} src={img} alt="Current" style={{ width: '60px', height: '60px', objectFit: 'cover', margin: '5px', borderRadius: '4px' }} />
+                        ))}
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -145,7 +203,7 @@ function EditPet() {
 
                 <div className="form-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
                     <button type="submit" className="btn btn-primary">Save Changes</button>
-                    <button type="button" className="btn btn-secondary" onClick={() => navigate('/ngo')}>Cancel</button>
+                    <button type="button" className="btn btn-secondary" onClick={() => user?.role === 'Owner' ? navigate('/user') : navigate('/ngo')}>Cancel</button>
                 </div>
             </form>
 

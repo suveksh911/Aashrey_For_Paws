@@ -85,17 +85,71 @@ function Signup() {
                             />
                         </div>
                         <div className="input-group">
-                            <label htmlFor='role'>I want to be a...</label>
-                            <select
-                                onChange={handleChange}
-                                name='role'
-                                value={signupInfo.role}
-                            >
-                                <option value="Adopter">Pet Adopter</option>
-                                <option value="Owner">Pet Owner</option>
-                                <option value="NGO">NGO Organization</option>
-                            </select>
+                            <label className="role-label">I want to be a...</label>
+                            <div className="role-selection">
+                                <div
+                                    className={`role-card ${signupInfo.role === 'Adopter' ? 'selected' : ''}`}
+                                    onClick={() => setSignupInfo({ ...signupInfo, role: 'Adopter' })}
+                                >
+                                    <div className="role-icon">🏠</div>
+                                    <span>Adopter</span>
+                                </div>
+                                <div
+                                    className={`role-card ${signupInfo.role === 'Owner' ? 'selected' : ''}`}
+                                    onClick={() => setSignupInfo({ ...signupInfo, role: 'Owner' })}
+                                >
+                                    <div className="role-icon">🐾</div>
+                                    <span>Owner</span>
+                                </div>
+                                <div
+                                    className={`role-card ${signupInfo.role === 'NGO' ? 'selected' : ''}`}
+                                    onClick={() => setSignupInfo({ ...signupInfo, role: 'NGO' })}
+                                >
+                                    <div className="role-icon">🏥</div>
+                                    <span>NGO</span>
+                                </div>
+                            </div>
                         </div>
+
+                        <style>{`
+                            .role-label {
+                                display: block;
+                                margin-bottom: 0.5rem;
+                                font-weight: 500;
+                            }
+                            .role-selection {
+                                display: flex;
+                                gap: 10px;
+                                margin-bottom: 1rem;
+                            }
+                            .role-card {
+                                flex: 1;
+                                border: 1px solid #ddd;
+                                border-radius: 8px;
+                                padding: 10px;
+                                text-align: center;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                                background: #fff;
+                            }
+                            .role-card:hover {
+                                background: #f9f9f9;
+                                transform: translateY(-2px);
+                            }
+                            .role-card.selected {
+                                border-color: var(--color-primary);
+                                background: #fff8f0; /* Light variant of primary color usually */
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            }
+                            .role-icon {
+                                font-size: 1.5rem;
+                                margin-bottom: 5px;
+                            }
+                            .role-card span {
+                                font-size: 0.9rem;
+                                font-weight: 600;
+                            }
+                        `}</style>
 
                         <button type='submit' className='btn btn-primary btn-auth'>Sign Up</button>
 

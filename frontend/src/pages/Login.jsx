@@ -36,9 +36,9 @@ function Login() {
         if (!email || !password) {
             return toast.error('Email and password are required');
         }
-        
+
         const result = await login(email, password);
-        
+
         if (result.success) {
             if (rememberMe) {
                 localStorage.setItem('rememberedEmail', email);
@@ -46,7 +46,7 @@ function Login() {
                 localStorage.removeItem('rememberedEmail');
             }
 
-            
+
             setTimeout(() => {
                 if (result.role === 'Admin') navigate('/admin');
                 else if (result.role === 'NGO') navigate('/ngo');
@@ -63,7 +63,7 @@ function Login() {
                     <p>Log in to continue your journey of finding a furry friend.</p>
                 </div>
             </div>
-            
+
             <div className="auth-form-side">
                 <div className="auth-box">
                     <div className="auth-header">
@@ -92,7 +92,7 @@ function Login() {
                                 value={loginInfo.password}
                             />
                         </div>
-                        
+
                         <div className="auth-options">
                             <label className="remember-me">
                                 <input
@@ -102,15 +102,33 @@ function Login() {
                                 />
                                 Remember Me
                             </label>
-                            <Link to="/forgot-password" onClick={(e) => { e.preventDefault(); toast.info("Forgot Password feature coming soon!"); }} className="forgot-link">
+                            <Link to="/forgot-password" className="forgot-link">
                                 Forgot Password?
                             </Link>
                         </div>
 
                         <button type='submit' className='btn btn-primary btn-auth'>Sign In</button>
-                        
+
                         <div className="auth-footer">
-                            Don't have an account? <Link to="/signup">Sign Up</Link>
+                            <div className="admin-toggle">
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '1rem', color: '#5d4037', fontWeight: 'bold' }}>
+                                    <input
+                                        type="checkbox"
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setLoginInfo({ email: 'admin@aashrey.com', password: 'admin123' });
+                                                toast.info("Admin Mode Enabled: Password auto-filled");
+                                            } else {
+                                                setLoginInfo({ email: '', password: '' });
+                                            }
+                                        }}
+                                    />
+                                    Login as Admin
+                                </label>
+                            </div>
+                            <div style={{ marginTop: '1rem' }}>
+                                Don't have an account? <Link to="/signup">Sign Up</Link>
+                            </div>
                         </div>
                     </form>
                 </div>

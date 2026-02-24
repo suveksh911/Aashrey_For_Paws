@@ -11,9 +11,12 @@ import Donate from './pages/Donate';
 import PetFind from './pages/PetFind';
 import PetDetails from './pages/PetDetails';
 import LostFound from './pages/LostFound';
+import Campaigns from './pages/Campaigns';
 import Community from './pages/Community';
+import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import NGODashboard from './pages/NGODashboard';
+import NGODetails from './pages/NGODetails';
 import AddPet from './pages/AddPet';
 import UserDashboard from './pages/UserDashboard';
 import AdoptionRequest from './pages/AdoptionRequest';
@@ -23,6 +26,15 @@ import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
 import Unauthorized from './pages/Unauthorized';
 import EditPet from './pages/EditPet';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import AdoptionStatus from './pages/AdoptionStatus';
+import AdoptionHistory from './pages/AdoptionHistory';
+import AdoptionBoard from './pages/AdoptionBoard';
+import NGODocumentUpload from './pages/NGODocumentUpload';
+import VerificationStatus from './pages/VerificationStatus';
+import NotFound from './pages/NotFound';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -37,6 +49,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/donate" element={<Donate />} />
@@ -48,6 +63,9 @@ function App() {
             <Route path="/payment-failure" element={<PaymentFailure />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/ngo/:id" element={<NGODetails />} />
+            <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/adoption-board" element={<AdoptionBoard />} />
 
 
             { }
@@ -55,18 +73,27 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['NGO']} />}>
-              <Route path="/ngo" element={<NGODashboard />} />
+            <Route element={<ProtectedRoute allowedRoles={['NGO', 'Owner']} />}>
               <Route path="/add-pet" element={<AddPet />} />
               <Route path="/edit-pet/:id" element={<EditPet />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['Adopter', 'Owner']} />}>
-              <Route path="/user" element={<UserDashboard />} />
-              <Route path="/adopt/:id" element={<AdoptionRequest />} />
+            <Route element={<ProtectedRoute allowedRoles={['NGO']} />}>
+              <Route path="/ngo" element={<NGODashboard />} />
+            </Route>
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<UserProfile />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route element={<ProtectedRoute allowedRoles={['User', 'Adopter', 'Owner']} />}>
+              <Route path="/user" element={<UserDashboard />} />
+              <Route path="/adopt/:id" element={<AdoptionRequest />} />
+              <Route path="/adoption-status" element={<AdoptionStatus />} />
+              <Route path="/adoption-history" element={<AdoptionHistory />} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
           </Routes>
           <ToastContainer position="top-right" autoClose={3000} />
         </Router>

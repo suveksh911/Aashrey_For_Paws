@@ -1,58 +1,108 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { Link } from 'react-router-dom';
 
 const containerStyle = {
     width: '100%',
-    height: '400px'
+    height: '500px',
+    borderRadius: '12px'
 };
 
 const center = {
-    lat: 27.7172, 
+    lat: 27.7172, // Kathmandu
     lng: 85.3240
 };
 
+const MapComponent = ({ pets = [] }) => {
+    const [selectedPet, setSelectedPet] = useState(null);
+    const [markers, setMarkers] = useState([]);
 
-const MOCK_MARKERS = [
-    { id: 1, name: "Buddy", lat: 27.7172, lng: 85.3240, type: "Dog" },
-    { id: 2, name: "Misty", lat: 27.6756, lng: 85.3253, type: "Cat" } 
-];
-
-const MapComponent = ({ pets }) => {
-    const [selectedDetail, setSelectedDetail] = React.useState(null);
-
-    const markers = pets || MOCK_MARKERS; 
+    useEffect(() => {
+        // Process pets to assign random locations near Kathmandu for demo purposes
+        // In production, this would use actual lat/lng from pet data
+        if (pets.length > 0) {
+            const processedMarkers = pets.map((pet, index) => {
+                // Generate random offsets for demo if no coords exist
+                // Kathmandu roughly 27.7, 85.3
+                const lat = pet.lat || (27.7172 + (Math.random() - 0.5) * 0.1);
+                const lng = pet.lng || (85.3240 + (Math.random() - 0.5) * 0.1);
+                return { ...pet, lat, lng };
+            });
+            setMarkers(processedMarkers);
+        }
+    }, [pets]);
 
     return (
         <LoadScript googleMapsApiKey="YOUR_API_KEY_HERE">
-            {}
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}
-                zoom={13}
+                zoom={12}
             >
-                {markers.map(marker => (
+                {markers.map(pet => (
                     <Marker
-                        key={marker.id || marker._id}
-                        position={{ lat: marker.lat || 27.7172, lng: marker.lng || 85.3240 }} 
-                        onClick={() => setSelectedDetail(marker)}
+                        key={pet._id || pet.id}
+                        position={{ lat: pet.lat, lng: pet.lng }}
+                        onClick={() => setSelectedPet(pet)}
                     />
                 ))}
 
-                {selectedDetail && (
+                {selectedPet && (
                     <InfoWindow
-                        position={{ lat: selectedDetail.lat || 27.7172, lng: selectedDetail.lng || 85.3240 }}
-                        onCloseClick={() => setSelectedDetail(null)}
+                        position={{ lat: selectedPet.lat, lng: selectedPet.lng }}
+                        onCloseClick={() => setSelectedPet(null)}
                     >
-                        <div>
-                            <h4>{selectedDetail.name}</h4>
-                            <p>{selectedDetail.type}</p>
-                            <p>{selectedDetail.location}</p>
+                        <div className="map-popup-card">
+                            <div className="popup-img">
+                                <img src={selectedPet.image || selectedPet.images?.[0]} alt={selectedPet.name} />
+                            </div>
+                            <div className="popup-info">
+                                <h4>{selectedPet.name}</h4>
+                                <p className="breed">{selectedPet.breed}</p>
+                                <p className="status" style={{ color: selectedPet.adoptionStatus === 'Available' ? 'green' : 'red' }}>{selectedPet.adoptionStatus}</p>
+                                <Link to={`/pet/${selectedPet._id}`} className="btn-view">View Profile</Link>
+                            </div>
                         </div>
                     </InfoWindow>
                 )}
             </GoogleMap>
+            <style>{`
+                .map-popup-card {
+                    width: 200px;
+                }
+                .popup-img img {
+                    width: 100%;
+                    height: 120px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                }
+                .popup-info h4 {
+                    margin: 8px 0 4px;
+                    font-size: 1rem;
+                }
+                .popup-info .breed {
+                    font-size: 0.85rem;
+                    color: #666;
+                    margin: 0;
+                }
+                .popup-info .status {
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    margin: 4px 0 8px;
+                }
+                .btn-view {
+                    display: block;
+                    background: #5d4037;
+                    color: white;
+                    text-align: center;
+                    padding: 5px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    font-size: 0.85rem;
+                }
+            `}</style>
         </LoadScript>
     );
-}
+};
 
 export default React.memo(MapComponent);
