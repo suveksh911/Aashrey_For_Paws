@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/axios';
 import './Auth.css';
 
 function ForgotPassword() {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -18,18 +19,17 @@ function ForgotPassword() {
         try {
             const response = await api.post('/auth/forgot-password', { email });
             if (response.data.success) {
-                toast.success(response.data.message || 'Password reset link sent to your email.');
+                toast.success(response.data.message || 'OTP sent successfully to your email.');
+                // Redirect to reset password page and pass the email in state
+                setTimeout(() => {
+                    navigate('/reset-password', { state: { email } });
+                }, 2000);
             } else {
-                toast.error(response.data.message || 'Failed to send reset link.');
+                toast.error(response.data.message || 'Failed to send OTP.');
             }
         } catch (error) {
             console.error(error);
-            // Fallback for Mock/Demo if backend is not running
-            if (!error.response) {
-                toast.success('Mock: Password reset link sent to your email.');
-            } else {
-                toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
-            }
+            toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }

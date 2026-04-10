@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Auth.css';
 
 function Login() {
@@ -10,6 +11,7 @@ function Login() {
         password: ''
     });
     const [rememberMe, setRememberMe] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -36,9 +38,9 @@ function Login() {
         if (!email || !password) {
             return toast.error('Email and password are required');
         }
-
+        
         const result = await login(email, password);
-
+        
         if (result.success) {
             if (rememberMe) {
                 localStorage.setItem('rememberedEmail', email);
@@ -46,7 +48,7 @@ function Login() {
                 localStorage.removeItem('rememberedEmail');
             }
 
-
+            
             setTimeout(() => {
                 if (result.role === 'Admin') navigate('/admin');
                 else if (result.role === 'NGO') navigate('/ngo');
@@ -63,7 +65,7 @@ function Login() {
                     <p>Log in to continue your journey of finding a furry friend.</p>
                 </div>
             </div>
-
+            
             <div className="auth-form-side">
                 <div className="auth-box">
                     <div className="auth-header">
@@ -79,20 +81,30 @@ function Login() {
                                 type='email'
                                 name='email'
                                 placeholder='name@example.com'
+                                autoComplete='new-password'
                                 value={loginInfo.email}
                             />
                         </div>
                         <div className="input-group">
                             <label htmlFor='password'>Password</label>
-                            <input
-                                onChange={handleChange}
-                                type='password'
-                                name='password'
-                                placeholder='••••••••'
-                                value={loginInfo.password}
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    onChange={handleChange}
+                                    type={showPassword ? 'text' : 'password'}
+                                    name='password'
+                                    placeholder='••••••••'
+                                    value={loginInfo.password}
+                                    autoComplete="new-password"
+                                />
+                                <div 
+                                    className="password-toggle-icon"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                </div>
+                            </div>
                         </div>
-
+                        
                         <div className="auth-options">
                             <label className="remember-me">
                                 <input
@@ -108,27 +120,9 @@ function Login() {
                         </div>
 
                         <button type='submit' className='btn btn-primary btn-auth'>Sign In</button>
-
+                        
                         <div className="auth-footer">
-                            <div className="admin-toggle">
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '1rem', color: '#5d4037', fontWeight: 'bold' }}>
-                                    <input
-                                        type="checkbox"
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setLoginInfo({ email: 'admin@aashrey.com', password: 'admin123' });
-                                                toast.info("Admin Mode Enabled: Password auto-filled");
-                                            } else {
-                                                setLoginInfo({ email: '', password: '' });
-                                            }
-                                        }}
-                                    />
-                                    Login as Admin
-                                </label>
-                            </div>
-                            <div style={{ marginTop: '1rem' }}>
-                                Don't have an account? <Link to="/signup">Sign Up</Link>
-                            </div>
+                            Don't have an account? <Link to="/signup">Sign Up</Link>
                         </div>
                     </form>
                 </div>

@@ -8,7 +8,7 @@ const PetSchema = new Schema({
     },
     age: {
         type: String,
-        required: true
+        default: 'Unknown'
     },
     breed: {
         type: String,
@@ -20,17 +20,68 @@ const PetSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ['Adoption', 'Lost', 'Found'],
+        enum: ['Adoption', 'Lost', 'Found', 'Rehoming', 'Sale'],
         default: 'Adoption'
+    },
+    gender: {
+        type: String,
+        enum: ['Male', 'Female', 'Unknown'],
+        default: 'Unknown'
+    },
+    healthStatus: {
+        type: String,
+        default: 'Healthy'
+    },
+    urgent: {
+        type: Boolean,
+        default: false
+    },
+    personalities: {
+        type: [String],
+        default: []
+    },
+    ownerId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    owner: { // Display name of the owner/NGO
+        type: String
     },
     status: {
         type: String,
         enum: ['Available', 'Adopted', 'Reunited', 'Pending'],
         default: 'Available'
     },
+    listingType: {
+        type: String,
+        enum: ['Adoption', 'Rehoming', 'Sale'],
+        default: 'Adoption'
+    },
+    price: {
+        type: Number,
+        default: 0
+    },
+    quantity: {
+        type: Number,
+        default: 1,
+        min: 0
+    },
+    quantity: {
+        type: Number,
+        default: 1,
+        min: 0
+    },
+    paymentDetails: {
+        type: String,
+        default: ''
+    },
+    vaccinated: {
+        type: Boolean,
+        default: false
+    },
     description: {
         type: String,
-        required: true
+        default: ''
     },
     images: {
         type: [String], // Array of URLs
@@ -44,9 +95,36 @@ const PetSchema = new Schema({
         type: String,
         required: true
     },
+    lat: {
+        type: Number,
+        default: null
+    },
+    lng: {
+        type: Number,
+        default: null
+    },
     contactInfo: {
-        type: String,
-        required: true
+        type: String
+    },
+    isApproved: {
+        type: Boolean,
+        default: true
+    },
+    vaccinations: {
+        type: [{
+            name: { type: String, default: '' },
+            date: { type: String, default: '' },
+            nextDue: { type: String, default: '' }
+        }],
+        default: []
+    },
+    medicalHistory: {
+        type: [{
+            condition: { type: String, default: '' },
+            date: { type: String, default: '' },
+            notes: { type: String, default: '' }
+        }],
+        default: []
     },
     createdAt: {
         type: Date,
@@ -56,3 +134,6 @@ const PetSchema = new Schema({
 
 const PetModel = mongoose.model('Pet', PetSchema);
 module.exports = PetModel;
+
+
+

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import Navbar from './components/Navbar';
+import Navbar from './components/common/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -22,8 +22,9 @@ import UserDashboard from './pages/UserDashboard';
 import AdoptionRequest from './pages/AdoptionRequest';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
+import KhaltiPaymentCallbackPage from './pages/KhaltiPaymentCallbackPage';
 import Notifications from './pages/Notifications';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import Unauthorized from './pages/Unauthorized';
 import EditPet from './pages/EditPet';
 import ForgotPassword from './pages/ForgotPassword';
@@ -31,11 +32,16 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import AdoptionStatus from './pages/AdoptionStatus';
 import AdoptionHistory from './pages/AdoptionHistory';
-import AdoptionBoard from './pages/AdoptionBoard';
 import NGODocumentUpload from './pages/NGODocumentUpload';
 import VerificationStatus from './pages/VerificationStatus';
 import NotFound from './pages/NotFound';
-import { AuthProvider } from './context/AuthContext';
+import PetPurchase from './pages/PetPurchase';
+import NGOShelterMap from './pages/NGOShelterMap';
+import RoleProfiles from './pages/RoleProfiles';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Footer from './components/common/Footer';
+import api from './services/axios';
+
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -61,14 +67,16 @@ function App() {
             <Route path="/community" element={<Community />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-failure" element={<PaymentFailure />} />
+            <Route path="/khalti-callback" element={<KhaltiPaymentCallbackPage />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/ngo/:id" element={<NGODetails />} />
             <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="/adoption-board" element={<AdoptionBoard />} />
+            <Route path="/ngo-document-upload" element={<NGODocumentUpload />} />
+            <Route path="/verification-status" element={<VerificationStatus />} />
+            <Route path="/shelter-map" element={<NGOShelterMap />} />
+            <Route path="/role-profile" element={<RoleProfiles />} />
 
-
-            { }
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
@@ -91,10 +99,12 @@ function App() {
               <Route path="/adopt/:id" element={<AdoptionRequest />} />
               <Route path="/adoption-status" element={<AdoptionStatus />} />
               <Route path="/adoption-history" element={<AdoptionHistory />} />
+              <Route path="/pet/buy/:id" element={<PetPurchase />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Footer />
           <ToastContainer position="top-right" autoClose={3000} />
         </Router>
       </AuthProvider>

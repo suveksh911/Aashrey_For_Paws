@@ -1,90 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaFileUpload } from 'react-icons/fa';
+import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaFileUpload, FaPaw } from 'react-icons/fa';
+import api from '../services/axios';
+import { useAuth } from '../context/AuthContext';
 
 const VerificationStatus = () => {
-    const [status, setStatus] = useState('Pending'); // Default for demo
+    const { user } = useAuth();
+    const [status, setStatus] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate fetching status
-        setTimeout(() => {
-            const user = JSON.parse(localStorage.getItem('user')) || {};
-            setStatus(user.verificationStatus || 'Unverified');
-            setLoading(false);
-        }, 500);
+        fetchStatus();
     }, []);
 
-    const renderStatusContent = () => {
+    const fetchStatus = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get('/ngo/verification-status');
+            if (res.data.success) {
+                setStatus(res.data.data?.verificationStatus || res.data.data?.status || 'Unverified');
+                setRejectionReason(res.data.data?.rejectionReason || '');
+            } else {
+                // Fallback: use AuthContext user data
+                setStatus(user?.verificationStatus || user?.isVerified ? 'Verified' : 'Unverified');
+            }
+        } catch {
+            // Fallback: read from AuthContext
+            setStatus(user?.verificationStatus || (user?.isVerified ? 'Verified' : 'Unverified'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderStatus = () => {
         switch (status) {
             case 'Verified':
+            case 'Approved':
                 return (
-                    <div className="status-content success">
-                        <FaCheckCircle size={80} color="#28a745" />
-                        <h2>Verified</h2>
-                        <p>Congratulations! Your organization has been verified. You now have the "Verified" badge on your profile.</p>
-                        <Link to="/ngo" className="btn btn-primary mt-3">Go to Dashboard</Link>
+                    <div className="text-center py-6">
+                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaCheckCircle size={48} className="text-green-500" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-green-600 mb-2">Verified ✅</h2>
+                        <p className="text-gray-500 mb-6">Congratulations! Your organization is verified. You now have the "Verified" badge on your profile.</p>
+                        <Link to="/ngo" className="bg-[#8D6E63] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#5D4037] transition-colors">
+                            Go to Dashboard
+                        </Link>
                     </div>
                 );
             case 'Pending':
                 return (
-                    <div className="status-content pending">
-                        <FaHourglassHalf size={80} color="#ffc107" />
-                        <h2>Verification Pending</h2>
-                        <p>Your documents have been submitted and are currently under review by our admin team. This usually takes 24-48 hours.</p>
-                        <Link to="/ngo" className="btn btn-outline-primary mt-3">Back to Dashboard</Link>
+                    <div className="text-center py-6">
+                        <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaHourglassHalf size={48} className="text-yellow-500" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-yellow-600 mb-2">Under Review ⏳</h2>
+                        <p className="text-gray-500 mb-2">Your documents have been submitted and are under review by our admin team.</p>
+                        <p className="text-sm text-gray-400 mb-6">This usually takes <strong>24–48 hours</strong>. You'll be notified once reviewed.</p>
+                        <Link to="/ngo" className="border border-[#8D6E63] text-[#8D6E63] px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition-colors">
+                            Back to Dashboard
+                        </Link>
                     </div>
                 );
             case 'Rejected':
                 return (
-                    <div className="status-content error">
-                        <FaTimesCircle size={80} color="#dc3545" />
-                        <h2>Verification Failed</h2>
-                        <p>Unfortunately, your verification was rejected. Please check your email for details or try uploading valid documents again.</p>
-                        <Link to="/ngo-verification" className="btn btn-primary mt-3">Re-upload Documents</Link>
+                    <div className="text-center py-6">
+                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaTimesCircle size={48} className="text-red-500" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-red-600 mb-2">Verification Failed ❌</h2>
+                        <p className="text-gray-500 mb-2">Your verification was rejected. Please review and re-upload valid documents.</p>
+                        {rejectionReason && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-4 text-left">
+                                <strong>Reason:</strong> {rejectionReason}
+                            </div>
+                        )}
+                        <Link to="/ngo-document-upload" className="bg-[#8D6E63] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#5D4037] transition-colors">
+                            Re-upload Documents
+                        </Link>
                     </div>
                 );
-            default: // Unverified
+            default:
                 return (
-                    <div className="status-content neutral">
-                        <FaFileUpload size={80} color="#6c757d" />
-                        <h2>Not Verified Yet</h2>
-                        <p>You haven't submitted your documents for verification yet. Verify your NGO to build trust.</p>
-                        <Link to="/ngo-verification" className="btn btn-primary mt-3">Start Verification</Link>
+                    <div className="text-center py-6">
+                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaFileUpload size={48} className="text-gray-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-600 mb-2">Not Verified Yet</h2>
+                        <p className="text-gray-500 mb-6">Submit your NGO documents to get a verified badge and build trust with adopters.</p>
+                        <Link to="/ngo-document-upload" className="bg-[#8D6E63] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#5D4037] transition-colors">
+                            Start Verification
+                        </Link>
                     </div>
                 );
         }
     };
 
-    if (loading) return <div className="container p-4 text-center">Loading status...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-16">
+            <FaPaw className="animate-bounce text-[#8D6E63]" size={32} />
+        </div>
+    );
 
     return (
-        <div className="container" style={{ padding: '4rem 2rem', maxWidth: '600px', textAlign: 'center' }}>
-            <div className="status-card">
-                {renderStatusContent()}
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full">
+                {renderStatus()}
             </div>
-
-            <style>{`
-                .status-card {
-                    background: white;
-                    padding: 3rem 2rem;
-                    border-radius: 12px;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                }
-                .status-content h2 {
-                    margin: 1.5rem 0 1rem;
-                    font-size: 2rem;
-                    color: #333;
-                }
-                .status-content p {
-                    color: #666;
-                    font-size: 1.1rem;
-                    line-height: 1.6;
-                }
-                .status-content.success h2 { color: #28a745; }
-                .status-content.pending h2 { color: #856404; }
-                .status-content.error h2 { color: #dc3545; }
-            `}</style>
         </div>
     );
 };

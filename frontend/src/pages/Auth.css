@@ -93,6 +93,40 @@
     background: #f9f9f9;
 }
 
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--color-text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.password-toggle-icon:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--color-primary);
+}
+
+/* Hide browser default password reveal icons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-password-reveal {
+    display: none !important;
+}
+
 .input-group input:focus,
 .input-group select:focus {
     border-color: var(--color-primary);

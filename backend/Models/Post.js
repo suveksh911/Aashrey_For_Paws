@@ -1,28 +1,44 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const ReplySchema = new Schema({
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    user: { type: String, required: true },
+    text: { type: String, required: true },
+    likes: { type: Number, default: 0 },
+    likedBy: [{ type: String }],
+    createdAt: { type: Date, default: Date.now }
+});
+
+const CommentSchema = new Schema({
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    user: { type: String, required: true },
+    text: { type: String, required: true },
+    likes: { type: Number, default: 0 },
+    likedBy: [{ type: String }],
+    replies: [ReplySchema],
+    createdAt: { type: Date, default: Date.now }
+});
+
 const PostSchema = new Schema({
-    title: {
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    image: { type: String, default: '' },
+    category: {
         type: String,
-        required: true
+        enum: ['General', 'Advice', 'Story', 'Question'],
+        default: 'General'
     },
-    content: {
-        type: String,
-        required: true
-    },
-    image: {
-        type: String,
-        default: ''
-    },
-    author: {
-        type: String, // Storing author name directly for simplicity, or could use ObjectId ref
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+    authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    author: { type: String, required: true },
+    likes: { type: Number, default: 0 },
+    likedBy: [{ type: String }],
+    comments: [CommentSchema],
+    createdAt: { type: Date, default: Date.now }
 });
 
 const PostModel = mongoose.model('Post', PostSchema);
 module.exports = PostModel;
+
+
+

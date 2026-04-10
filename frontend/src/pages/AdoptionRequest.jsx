@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/axios';
 
 function AdoptionRequest() {
     const { id } = useParams();
@@ -25,37 +26,23 @@ function AdoptionRequest() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const newRequest = {
-            id: Date.now().toString(),
-            petId: id,
-            petName: petName,
-            applicantName: formData.fullName,
-            userId: user?.name,
-            ...formData,
-            status: 'Pending',
-            date: new Date().toLocaleDateString()
-        };
+        try {
+            await api.post('/adoptions', {
+                petId: id,
+                petName: petName,
+                userName: formData.fullName,
+                phone: formData.phone,
+                reason: `Address: ${formData.address}\nOther Pets: ${formData.haveOtherPets}\nReason: ${formData.reason}`,
+            });
 
-        // Save adoption request
-        const existingRequests = JSON.parse(localStorage.getItem('adoptionRequests')) || [];
-        localStorage.setItem('adoptionRequests', JSON.stringify([...existingRequests, newRequest]));
-
-        // Push a notification for the owner/NGO to see
-        const ownerNotif = {
-            id: Date.now().toString() + '_notif',
-            type: 'info',
-            message: `${formData.fullName} wants to adopt "${petName}". Review the request in your dashboard.`,
-            date: new Date().toLocaleDateString(),
-            read: false
-        };
-        const existingNotifs = JSON.parse(localStorage.getItem('appNotifications')) || [];
-        localStorage.setItem('appNotifications', JSON.stringify([ownerNotif, ...existingNotifs]));
-
-        toast.success(`Adoption request for ${petName} submitted successfully!`);
-        navigate('/user');
+            toast.success(`Adoption request for ${petName} submitted successfully!`);
+            navigate(-1);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to submit adoption request');
+        }
     };
 
     return (

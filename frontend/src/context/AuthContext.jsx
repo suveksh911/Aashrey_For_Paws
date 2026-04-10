@@ -11,16 +11,47 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const triggerReminders = async () => {
+        try {
+            await api.post('/vaccinations/check-reminders');
+        } catch (err) {
+            console.warn("Reminder check failed (silent background task)", err);
+        }
+    };
 
+    const refreshUser = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const res = await api.get('/users/me');
+            if (res.data.success) {
+                const fullUser = res.data.data;
+                setUser(fullUser);
+                localStorage.setItem('loggedInUser', fullUser.name);
+                localStorage.setItem('email', fullUser.email);
+                setIsAuthenticated(true);
+            }
+        } catch (err) {
+            console.error("Failed to refresh user profile", err);
+        }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         const loggedInUser = localStorage.getItem('loggedInUser');
         const role = localStorage.getItem('role');
+        const email = localStorage.getItem('email');
+        const _id = localStorage.getItem('_id');
 
-        if (token && loggedInUser) {
-            setUser({ name: loggedInUser, role: role });
-            setIsAuthenticated(true);
+        if (token) {
+            // Set basic info first from LS
+            if (loggedInUser) {
+                setUser({ name: loggedInUser, role, email, _id });
+                setIsAuthenticated(true);
+            }
+            // Then fetch full profile for details & image
+            refreshUser();
+            triggerReminders();
         }
         setLoading(false);
     }, []);
@@ -29,21 +60,27 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/auth/login', { email, password });
             if (response.data.success) {
-                const { jwtToken, name, role, message } = response.data;
-                localStorage.setItem('token', jwtToken);
+                const { name, role, token, _id } = response.data.data;
+                const { message } = response.data;
+                localStorage.setItem('token', token);
                 localStorage.setItem('loggedInUser', name);
                 localStorage.setItem('role', role);
+                localStorage.setItem('email', email);
+                if (_id) localStorage.setItem('_id', _id);
 
-                setUser({ name, role });
+                setUser({ name, role, email, _id });
                 setIsAuthenticated(true);
-                toast.success(message);
+                triggerReminders();
+                toast.success(message || 'Login Successful');
                 return { success: true, role };
             } else {
+                toast.error(response.data.message || 'Login failed');
                 return { success: false, message: response.data.message };
             }
         } catch (error) {
-            console.log("Backend failed, attempting mock login...");
-            return mockLogin(email, password);
+            const msg = error.response?.data?.message || 'Network error: Backend is unreachable';
+            toast.error(msg);
+            return { success: false, message: msg };
         }
     };
 
@@ -54,64 +91,23 @@ export const AuthProvider = ({ children }) => {
                 toast.success(response.data.message);
                 return { success: true };
             } else {
+                toast.error(response.data.message || 'Signup failed');
                 return { success: false, message: response.data.message };
             }
         } catch (error) {
-            console.log("Backend failed, attempting mock signup...");
-            return mockSignup(userData);
+            const msg = error.response?.data?.message || 'Network error: Backend is unreachable';
+            toast.error(msg);
+            return { success: false, message: msg };
         }
     };
 
-    // Mock Authentication Logic
-    const mockLogin = (email, password) => {
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        const foundUser = users.find(u => u.email === email && u.password === password);
-
-        if (foundUser) {
-            const token = "mock-jwt-token-" + Date.now();
-            localStorage.setItem('token', token);
-            localStorage.setItem('loggedInUser', foundUser.name);
-            localStorage.setItem('role', foundUser.role);
-
-            setUser({ name: foundUser.name, role: foundUser.role });
-            setIsAuthenticated(true);
-            toast.success("Login Successful (Mock Mode)");
-            return { success: true, role: foundUser.role };
-        } else {
-            // Also allow a default admin/ngo login if not found
-            if (email === 'admin@aashrey.com' && password === 'admin123') {
-                localStorage.setItem('token', 'mock-admin-token');
-                localStorage.setItem('loggedInUser', 'Admin User');
-                localStorage.setItem('role', 'Admin');
-                setUser({ name: 'Admin User', role: 'Admin' });
-                setIsAuthenticated(true);
-                return { success: true, role: 'Admin' };
-            }
-            toast.error("Invalid credentials (Mock)");
-            return { success: false, message: "Invalid credentials" };
-        }
-    };
-
-    const mockSignup = (userData) => {
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        // Check duplication
-        if (users.find(u => u.email === userData.email)) {
-            toast.error("User already exists (Mock)");
-            return { success: false, message: "User already exists" };
-        }
-
-        const newUser = { ...userData, id: Date.now() };
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
-
-        toast.success("Account created! User saved locally.");
-        return { success: true };
-    };
 
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('loggedInUser');
         localStorage.removeItem('role');
+        localStorage.removeItem('email');
+        localStorage.removeItem('_id');
         setUser(null);
         setIsAuthenticated(false);
         toast.info('Logged out successfully');
@@ -123,7 +119,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         signup,
-        logout
+        logout,
+        refreshUser
     };
 
     return (

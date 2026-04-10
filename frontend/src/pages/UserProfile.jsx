@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import api from '../services/axios';
 import {
     FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave,
-    FaHeart, FaClipboardList, FaHistory, FaPaw, FaShieldAlt, FaCamera
+    FaHeart, FaClipboardList, FaHistory, FaPaw, FaShieldAlt, FaCamera, FaQuoteLeft
 } from 'react-icons/fa';
 import NGOProfilePage, { OwnerProfilePage, AdminProfilePage } from './RoleProfiles';
 
@@ -21,9 +22,14 @@ const UserProfile = () => {
 };
 
 // ── Adopter / User Profile ────────────────────────────────────────────────────
-const AdopterProfile = () => {
-    const { user } = useAuth();
+const AdopterProfile = React.forwardRef(({ isTab = false, externalEditing = false, onEditingComplete }, ref) => {
+    const { user, refreshUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
+
+    useEffect(() => {
+        if (externalEditing) setIsEditing(true);
+        else if (isTab && isEditing && !externalEditing) setIsEditing(false);
+    }, [externalEditing, isTab]);
     const [profileImage, setProfileImage] = useState(null);
     const fileInputRef = useRef(null);
     const [profileData, setProfileData] = useState({
@@ -31,35 +37,54 @@ const AdopterProfile = () => {
         email: user?.email || '',
         phone: '',
         address: '',
-        bio: 'Animal lover and advocate for pet adoption.'
+        bio: ''
     });
     const [favorites, setFavorites] = useState([]);
     const [requestCount, setRequestCount] = useState(0);
     const [historyCount, setHistoryCount] = useState(0);
+    const [vaccinations, setVaccinations] = useState([]);
+
 
     useEffect(() => {
-        // Load saved profile from localStorage
-        const saved = JSON.parse(localStorage.getItem('userProfileData')) || {};
-        setProfileData(prev => ({
-            ...prev,
-            ...saved,
-            name: user?.name || saved.name || 'User',
-            email: user?.email || saved.email || '',
-        }));
-
-        // Load saved profile image
-        const savedImg = localStorage.getItem('userProfileImage');
-        if (savedImg) setProfileImage(savedImg);
-
-        // Stats from localStorage
-        const allReqs = JSON.parse(localStorage.getItem('adoptionRequests')) || [];
-        const myReqs = allReqs.filter(r => r.userId === user?.name);
-        setRequestCount(myReqs.length);
-        setHistoryCount(myReqs.filter(r => ['Approved', 'Adopted'].includes(r.status)).length);
-        setFavorites(JSON.parse(localStorage.getItem('userFavorites')) || []);
+        if (!user) return;
+        fetchProfile();
+        fetchStats();
     }, [user]);
 
-    const handleImageUpload = (e) => {
+    const fetchProfile = async () => {
+        try {
+            const res = await api.get('/users/me');
+            if (res.data.success) {
+                const u = res.data.data;
+                setProfileData({
+                    name: u.name || '',
+                    email: u.email || '',
+                    phone: u.phone || '',
+                    address: u.address || '',
+                    bio: u.bio || ''
+                });
+                if (u.profileImage) setProfileImage(u.profileImage);
+            }
+        } catch {
+            // Fallback to auth context if API fails
+            setProfileData(prev => ({ ...prev, name: user?.name || 'User', email: user?.email || '' }));
+        }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const [reqRes] = await Promise.allSettled([
+                api.get('/adoptions/my')
+            ]);
+            if (reqRes.status === 'fulfilled' && reqRes.value.data.success) {
+                const reqs = reqRes.value.data.data;
+                setRequestCount(reqs.length);
+                setHistoryCount(reqs.filter(r => ['Approved', 'Adopted'].includes(r.status)).length);
+            }
+        } catch { /* stats are optional */ }
+    };
+
+    const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 3 * 1024 * 1024) {
@@ -67,11 +92,16 @@ const AdopterProfile = () => {
             return;
         }
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = async (ev) => {
             const dataUrl = ev.target.result;
             setProfileImage(dataUrl);
-            localStorage.setItem('userProfileImage', dataUrl);
-            toast.success('Profile picture updated!');
+            try {
+                await api.patch('/users/me', { profileImage: dataUrl });
+                toast.success('Profile picture updated!');
+                if (refreshUser) refreshUser();
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to save profile picture');
+            }
         };
         reader.readAsDataURL(file);
     };
@@ -81,78 +111,131 @@ const AdopterProfile = () => {
         setProfileData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = () => {
-        localStorage.setItem('userProfileData', JSON.stringify(profileData));
-        setIsEditing(false);
-        toast.success('Profile updated successfully!');
+    const handleSave = async () => {
+        try {
+            await api.patch('/users/me', {
+                name: profileData.name,
+                email: profileData.email,
+                phone: profileData.phone,
+                address: profileData.address,
+                bio: profileData.bio
+            });
+            toast.success('Profile updated successfully!');
+            setIsEditing(false);
+            if (refreshUser) await refreshUser();
+            if (onEditingComplete) onEditingComplete();
+        } catch {
+            toast.error('Failed to save profile. Please try again.');
+        }
     };
+
+    React.useImperativeHandle(ref, () => ({
+        handleSave
+    }));
 
     return (
         <div className="up-container">
 
             {/* Header Banner */}
-            <div className="up-banner">
-                {/* Clickable Avatar */}
-                <div
-                    className="up-avatar up-avatar-clickable"
-                    onClick={() => fileInputRef.current.click()}
-                    title="Click to change profile picture"
-                >
-                    {profileImage
-                        ? <img src={profileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                        : <FaUser size={46} />
-                    }
-                    <div className="up-avatar-camera">
-                        <FaCamera size={14} />
+            {!isTab && (
+                <div className="up-banner">
+                    {/* Clickable Avatar */}
+                    <div className="up-avatar">
+                        {profileImage
+                            ? <img src={profileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            : <FaUser size={46} />
+                        }
+                        <div 
+                            className="up-avatar-camera" 
+                            onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}
+                            title="Update Photo"
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <FaCamera size={14} />
+                        </div>
+                    </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                    />
+                    <h1>{profileData.name}</h1>
+                    <span className="up-role">{user?.role || 'Adopter'}</span>
+                    <div className="up-quick-stats">
+                        <div className="up-qs"><strong>{requestCount}</strong><span>Applications</span></div>
+                        <div className="up-qs-divider" />
+                        <div className="up-qs"><strong>{historyCount}</strong><span>Adopted</span></div>
+                        <div className="up-qs-divider" />
+                        <div className="up-qs"><strong>{favorites.length}</strong><span>Saved</span></div>
                     </div>
                 </div>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ display: 'none' }}
-                />
-                <h1>{profileData.name}</h1>
-                <span className="up-role">{user?.role || 'Adopter'}</span>
-                <div className="up-quick-stats">
-                    <div className="up-qs"><strong>{requestCount}</strong><span>Applications</span></div>
-                    <div className="up-qs-divider" />
-                    <div className="up-qs"><strong>{historyCount}</strong><span>Adopted</span></div>
-                    <div className="up-qs-divider" />
-                    <div className="up-qs"><strong>{favorites.length}</strong><span>Saved</span></div>
-                </div>
-            </div>
+            )}
 
-            {/* Quick links */}
-            <div className="up-links-row">
-                <Link to="/user" className="up-quick-link">
-                    <FaClipboardList /> My Dashboard
-                </Link>
-                <Link to="/adoption-history" className="up-quick-link">
-                    <FaHistory /> Adoption History
-                </Link>
-                <Link to="/adoption-status" className="up-quick-link">
-                    <FaShieldAlt /> Track Status
-                </Link>
-                <Link to="/pet-find" className="up-quick-link">
-                    <FaPaw /> Find Pets
-                </Link>
-            </div>
+            {/* Quick links - Hide if in tab */}
+            {!isTab && (
+                <div className="up-links-row">
+                    <Link to="/user" className="up-quick-link">
+                        <FaClipboardList /> My Dashboard
+                    </Link>
+                    <Link to="/adoption-history" className="up-quick-link">
+                        <FaHistory /> Adoption History
+                    </Link>
+                    <Link to="/adoption-status" className="up-quick-link">
+                        <FaShieldAlt /> Track Status
+                    </Link>
+                    <Link to="/pet-find" className="up-quick-link">
+                        <FaPaw /> Find Pets
+                    </Link>
+                </div>
+            )}
 
             {/* Main content */}
-            <div className="up-content">
+            <div className={`up-content ${isTab ? 'up-tab-mode' : ''}`}>
 
-                {/* Personal Info */}
+
+                
+                {isTab && vaccinations.length > 0 && vaccinations.some(v => v.daysLeft < 30) && (
+                    <div className="up-health-alert">
+                        <FaShieldAlt /> <strong>Health Reminder:</strong> You have upcoming vaccinations to track.
+                    </div>
+                )}
+
+                {/* Single Edit Button for entire profile - Hide if externally managed or isTab */}
+                {!externalEditing && !isTab && (
+                    !isEditing ? (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.5rem' }}>
+                            <button className="up-edit-btn" onClick={() => setIsEditing(true)}><FaEdit /> Edit Profile</button>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '-0.5rem' }}>
+                            <button className="up-cancel-btn" onClick={() => setIsEditing(false)}>Cancel</button>
+                            <button className="up-save-btn" onClick={handleSave}><FaSave /> Save Changes</button>
+                        </div>
+                    )
+                )}
+
+                {/* About Me */}
+                <div className="up-card up-featured-card">
+                    <div className="up-card-header">
+                        <h2><FaUser /> About</h2>
+                    </div>
+                    <div className="up-featured-content">
+                        {isEditing ? (
+                            <textarea name="bio" value={profileData.bio} onChange={handleChange} rows={5} className="up-bio-input premium-textarea" placeholder="Tell the community about your journey with animals..." />
+                        ) : (
+                            <div className="up-bio-display">
+                                <p className="up-bio-text text-premium">{profileData.bio || <span style={{ color: '#bbb', fontStyle: 'italic' }}>Share your passion for animals and your pet journey here.</span>}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Personal Information */}
                 <div className="up-card">
                     <div className="up-card-header">
                         <h2>Personal Information</h2>
-                        <button
-                            className="up-edit-btn"
-                            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                        >
-                            {isEditing ? <><FaSave /> Save</> : <><FaEdit /> Edit</>}
-                        </button>
                     </div>
 
                     <div className="up-info-grid">
@@ -173,30 +256,13 @@ const AdopterProfile = () => {
                                         placeholder={field.placeholder || field.label}
                                     />
                                 ) : (
-                                    <p>{profileData[field.name] || <span style={{ color: '#bbb', fontStyle: 'italic' }}>Not set</span>}</p>
+                                <p className="truncate max-w-[200px]" title={profileData[field.name]}>
+                                    {profileData[field.name] || <span style={{ color: '#bbb', fontStyle: 'italic' }}>Not set</span>}
+                                </p>
                                 )}
                             </div>
                         ))}
                     </div>
-                </div>
-
-                {/* Bio */}
-                <div className="up-card">
-                    <div className="up-card-header">
-                        <h2>About Me</h2>
-                        {!isEditing && <button className="up-edit-btn" onClick={() => setIsEditing(true)}><FaEdit /> Edit</button>}
-                    </div>
-                    {isEditing ? (
-                        <textarea name="bio" value={profileData.bio} onChange={handleChange} rows={4} className="up-bio-input" placeholder="Tell adopters about yourself..." />
-                    ) : (
-                        <p className="up-bio-text">{profileData.bio || <span style={{ color: '#bbb', fontStyle: 'italic' }}>No bio yet.</span>}</p>
-                    )}
-                    {isEditing && (
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                            <button className="up-save-btn" onClick={handleSave}><FaSave /> Save Changes</button>
-                            <button className="up-cancel-btn" onClick={() => setIsEditing(false)}>Cancel</button>
-                        </div>
-                    )}
                 </div>
 
                 {/* Saved Pets */}
@@ -222,11 +288,53 @@ const AdopterProfile = () => {
             </div>
 
             <style>{`
-                .up-container {
-                    max-width: 860px;
-                    margin: 2rem auto;
-                    padding: 0 1rem 2rem;
+                .up-container { max-width: 860px; margin: 0 auto; padding: 0 0 2rem; }
+                .up-tab-mode { gap: 1rem; }
+                .up-tab-mode .up-card { box-shadow: none; border: 1px solid #eee; padding: 1.2rem; }
+                
+                /* Premium Featured Card */
+                .up-featured-card {
+                    background: linear-gradient(to right, #ffffff, #fdfdfd);
+                    position: relative;
+                    overflow: hidden;
                 }
+                .up-bio-display { position: relative; padding: 0.2rem 0; }
+                .text-premium { line-height: 1.8; color: #444; font-size: 1.05rem; white-space: pre-wrap; }
+                .premium-textarea { border: 1px solid #e0e0e0; border-radius: 12px; padding: 1rem; line-height: 1.6; }
+                
+                .up-tab-header {
+                    display: flex; align-items: center; gap: 1.5rem;
+                    background: white; padding: 1.5rem; border-radius: 20px;
+                    border: 1px solid #f0f0f0; margin-bottom: 1rem;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                }
+                .up-tab-avatar-group { cursor: pointer; }
+                .up-tab-avatar {
+                    width: 72px; height: 72px; background: #efebe9;
+                    border-radius: 20px; display: flex; align-items: center; justify-content: center;
+                    position: relative; border: 3px solid #5d4037; overflow: visible;
+                }
+                .up-tab-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 17px; }
+                .up-tab-avatar-camera {
+                    position: absolute; -bottom: 8px; -right: 8px;
+                    background: #5d4037; color: white;
+                    width: 24px; height: 24px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    border: 2px solid white; shadow: 0 2px 5px rgba(0,0,0,0.2);
+                }
+                .up-tab-title h3 { margin: 0; font-size: 1.4rem; color: #333; font-weight: 800; letter-spacing: -0.5px; }
+                .up-tab-badge { 
+                    margin-top: 5px; font-size: 0.75rem; color: #5d4037; font-weight: 800; 
+                    background: #fff8f6; padding: 3px 10px; border-radius: 15px; border: 1px solid #efebe9;
+                    display: inline-block; text-transform: uppercase; letter-spacing: 0.5px;
+                }
+                .up-health-alert {
+                    display: flex; align-items: center; gap: 0.8rem; background: #fff4e5;
+                    color: #663c00; padding: 1rem 1.25rem; border-radius: 15px;
+                    margin-bottom: 1.5rem; border: 1px solid #ffe2b7; font-size: 0.9rem;
+                }
+                .up-health-alert strong { font-weight: 800; }
+
                 .up-banner {
                     background: linear-gradient(135deg, #5d4037 0%, #8d6e63 100%);
                     color: white;
@@ -366,6 +474,7 @@ const AdopterProfile = () => {
             `}</style>
         </div>
     );
-};
+});
 
+export { AdopterProfile };
 export default UserProfile;

@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 
 function Home() {
     const [loggedInUser, setLoggedInUser] = useState('');
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
     useEffect(() => {
+        // Automatically redirect Admin to the Admin Dashboard
+        if (user && user.role === 'Admin') {
+            navigate('/admin', { replace: true });
+        }
         setLoggedInUser(localStorage.getItem('loggedInUser'));
-    }, []);
+    }, [user, navigate]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');

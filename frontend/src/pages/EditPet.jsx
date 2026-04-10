@@ -17,9 +17,10 @@ function EditPet() {
         breed: '',
         age: '',
         gender: '',
+        quantity: 1,
         location: '',
         description: '',
-        adoptionStatus: 'Available',
+        status: 'Available',
         images: []
     });
 
@@ -34,7 +35,7 @@ function EditPet() {
                 const pet = response.data.data;
                 setFormData({
                     name: pet.name,
-                    type: pet.type,
+                    type: pet.type || pet.category || 'Dog',
                     breed: pet.breed,
                     age: pet.age,
                     gender: pet.gender,
@@ -42,33 +43,16 @@ function EditPet() {
                     image: pet.image || '',
                     images: pet.images || (pet.image ? [pet.image] : []),
                     description: pet.description || '',
-                    adoptionStatus: pet.adoptionStatus,
+                    status: pet.status || pet.adoptionStatus || 'Available',
+                    quantity: pet.quantity || 1,
                     vaccinations: pet.vaccinations || [],
                     medicalHistory: pet.medicalHistory || []
-                });
-            }
-        } catch (error) {
-            // Fallback: load from localStorage (for Owner's locally-stored pets)
-            const localPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
-            const found = localPets.find(p => p._id === id);
-            if (found) {
-                setFormData({
-                    name: found.name || '',
-                    type: found.type || 'Dog',
-                    breed: found.breed || '',
-                    age: found.age || '',
-                    gender: found.gender || 'Male',
-                    location: found.location || '',
-                    image: found.image || '',
-                    images: found.images || (found.image ? [found.image] : []),
-                    description: found.description || '',
-                    adoptionStatus: found.adoptionStatus || 'Available',
-                    vaccinations: found.vaccinations || [],
-                    medicalHistory: found.medicalHistory || []
                 });
             } else {
                 toast.error('Pet not found');
             }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to load pet data');
         } finally {
             setLoading(false);
         }
@@ -108,19 +92,12 @@ function EditPet() {
         try {
             const response = await api.put(`/pets/${id}`, formData);
             if (response.data.success) {
-                toast.success('Pet updated successfully');
+                toast.success('Pet updated successfully!');
                 redirectAfterSave();
-                return;
             }
         } catch (error) {
-            // API failed — update locally
+            toast.error(error.response?.data?.message || 'Failed to update pet. Please try again.');
         }
-        // Local update fallback
-        const allPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
-        const updated = allPets.map(p => p._id === id ? { ...p, ...formData } : p);
-        localStorage.setItem('ngoPets', JSON.stringify(updated));
-        toast.success('Pet updated!');
-        redirectAfterSave();
     };
 
     if (loading) return <div className="container center-content">Loading...</div>;
@@ -158,7 +135,12 @@ function EditPet() {
                         <select name="gender" value={formData.gender} onChange={handleChange}>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
+                            <option value="Unknown">Unknown</option>
                         </select>
+                    </div>
+                    <div className="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="quantity" value={formData.quantity || 1} onChange={handleChange} min="0" />
                     </div>
                 </div>
 
@@ -184,7 +166,7 @@ function EditPet() {
 
                 <div className="form-group">
                     <label>Adoption Status</label>
-                    <select name="adoptionStatus" value={formData.adoptionStatus} onChange={handleChange}>
+                    <select name="status" value={formData.status} onChange={handleChange}>
                         <option value="Available">Available</option>
                         <option value="Adopted">Adopted</option>
                         <option value="Pending">Pending</option>
@@ -230,7 +212,7 @@ function EditPet() {
                 }
                 .form-row {
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
                     gap: 1rem;
                 }
             `}</style>

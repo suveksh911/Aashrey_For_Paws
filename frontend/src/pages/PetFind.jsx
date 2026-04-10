@@ -2,109 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import { FaSearch, FaMapMarkerAlt, FaPaw, FaMap, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaBuilding, FaUser, FaStore } from 'react-icons/fa';
-import AdvancedSearch from '../components/AdvancedSearch';
-import MapComponent from '../components/MapComponent';
-import Skeleton from '../components/Skeleton';
+import { FaSearch, FaMapMarkerAlt, FaPaw, FaMap, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaBuilding, FaUser, FaStore, FaStar } from 'react-icons/fa';
+import AdvancedSearch from '../components/pet/AdvancedSearch';
+import MapComponent from '../components/common/MapComponent';
+import NGOVerifiedBadge from '../components/ngo/NGOVerifiedBadge';
+import Skeleton from '../components/common/Skeleton';
 
-const MOCK_PETS = [
-    {
-        _id: 'm1',
-        name: 'Buddy',
-        type: 'Dog',
-        breed: 'Golden Retriever',
-        age: '2 years',
-        gender: 'Male',
-        location: 'Kathmandu',
-        image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Available',
-        vaccinated: true,
-        healthStatus: 'Healthy',
-        urgent: false,
-        personalities: ['Friendly', 'Playful', 'Energetic'],
-        postedBy: { type: 'NGO', name: 'Paws & Love Nepal' }
-    },
-    {
-        _id: 'm2',
-        name: 'Misty',
-        type: 'Cat',
-        breed: 'Persian',
-        age: '1 year',
-        gender: 'Female',
-        location: 'Dharan-18',
-        image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Available',
-        vaccinated: true,
-        healthStatus: 'Healthy',
-        urgent: false,
-        personalities: ['Calm', 'Cuddly', 'Shy'],
-        postedBy: { type: 'Owner', name: 'Sita Sharma' }
-    },
-    {
-        _id: 'm3',
-        name: 'Rocky',
-        type: 'Dog',
-        breed: 'German Shepherd',
-        age: '3 years',
-        gender: 'Male',
-        location: 'Bhanuchowk, Dharan',
-        image: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Available',
-        vaccinated: false,
-        healthStatus: 'Needs Care',
-        urgent: true,
-        personalities: ['Loyal', 'Protective', 'Intelligent'],
-        postedBy: { type: 'NGO', name: 'Animal Aid Nepal' }
-    },
-    {
-        _id: 'm4',
-        name: 'Luna',
-        type: 'Cat',
-        breed: 'Siamese',
-        age: '6 months',
-        gender: 'Female',
-        location: 'Itahari-17',
-        image: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Adopted',
-        vaccinated: true,
-        healthStatus: 'Healthy',
-        urgent: false,
-        personalities: ['Vocal', 'Affectionate', 'Social'],
-        postedBy: { type: 'Owner', name: 'Ram Thapa' }
-    },
-    {
-        _id: 'm5',
-        name: 'Coco',
-        type: 'Dog',
-        breed: 'Labrador',
-        age: '5 months',
-        gender: 'Female',
-        location: 'Kathmandu',
-        image: 'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Available',
-        vaccinated: true,
-        healthStatus: 'Healthy',
-        urgent: true,
-        personalities: ['Playful', 'Friendly', 'Gentle'],
-        postedBy: { type: 'Shop', name: 'Furry Friends Pet Store' }
-    },
-    {
-        _id: 'm6',
-        name: 'Max',
-        type: 'Dog',
-        breed: 'Husky',
-        age: '1.5 years',
-        gender: 'Male',
-        location: 'Lalitpur',
-        image: 'https://images.unsplash.com/photo-1605568427561-40dd23c2acea?auto=format&fit=crop&w=600&q=80',
-        adoptionStatus: 'Available',
-        vaccinated: false,
-        healthStatus: 'Healthy',
-        urgent: false,
-        personalities: ['Energetic', 'Independent', 'Adventurous'],
-        postedBy: { type: 'NGO', name: 'Himalayan Animal Rescue' }
-    }
-];
 
 // Poster badge config
 const POSTER_CONFIG = {
@@ -142,20 +45,20 @@ function PetFind() {
     useEffect(() => { applyFilters(); }, [filters, pets]);
 
     const fetchPets = async () => {
+        setLoading(true);
         try {
             const response = await api.get('/pets');
-            if (response.data.success && response.data.data.length > 0) {
+            if (response.data.success) {
                 setPets(response.data.data);
                 setFilteredPets(response.data.data);
             } else {
-                setPets(MOCK_PETS);
-                setFilteredPets(MOCK_PETS);
+                setPets([]);
+                setFilteredPets([]);
             }
-        } catch {
-            const localPets = JSON.parse(localStorage.getItem('ngoPets')) || [];
-            const all = [...MOCK_PETS, ...localPets];
-            setPets(all);
-            setFilteredPets(all);
+        } catch (err) {
+            toast.error("Could not connect to server. Please check your internet connection.");
+            setPets([]);
+            setFilteredPets([]);
         } finally {
             setLoading(false);
         }
@@ -167,20 +70,42 @@ function PetFind() {
     };
 
     const applyFilters = () => {
-        let result = pets;
+        // Only show pets that are available or pending, and exclude Lost & Found types
+        let result = pets.filter(p => !['Adopted', 'Reunited'].includes(p.status) && p.type !== 'Lost' && p.type !== 'Found');
         if (filters.search) {
             const s = filters.search.toLowerCase();
             result = result.filter(p =>
-                p.name.toLowerCase().includes(s) ||
-                p.breed.toLowerCase().includes(s) ||
-                p.location.toLowerCase().includes(s)
+                (p.name || '').toLowerCase().includes(s) ||
+                (p.breed || '').toLowerCase().includes(s) ||
+                (p.location || '').toLowerCase().includes(s)
             );
         }
-        if (filters.type) result = result.filter(p => p.type === filters.type);
+        if (filters.type) result = result.filter(p => p.type === filters.type || p.category === filters.type);
         if (filters.gender) result = result.filter(p => p.gender === filters.gender);
-        if (filters.location) result = result.filter(p => p.location.toLowerCase().includes(filters.location.toLowerCase()));
-        if (filters.age) result = result.filter(p => p.age.includes(filters.age));
+        if (filters.location) result = result.filter(p => (p.location || '').toLowerCase().includes(filters.location.toLowerCase()));
+        
+        // Advanced filters
+        if (filters.breed) result = result.filter(p => (p.breed || '').toLowerCase().includes(filters.breed.toLowerCase()));
+        
+        if (filters.age) {
+            if (filters.age.includes('Puppy') || filters.age.includes('Kitten')) {
+                result = result.filter(p => parseInt(p.age) <= 1 || p.age.toLowerCase().includes('month'));
+            } else if (filters.age.includes('Young')) {
+                result = result.filter(p => parseInt(p.age) > 1 && parseInt(p.age) <= 3 && !p.age.toLowerCase().includes('month'));
+            } else if (filters.age.includes('Adult')) {
+                result = result.filter(p => parseInt(p.age) > 3 && parseInt(p.age) <= 8);
+            } else if (filters.age.includes('Senior')) {
+                result = result.filter(p => parseInt(p.age) > 8);
+            }
+        }
+        
+        // Fallback distance calculation.
+        // Pending HTML5 geolocation integration for precise distance filtering.
+        // For now, distance filter won't aggressively hide pets unless combined with a specific user lat/lng.
+        // if (filters.distance) {}
+
         if (filters.posterType) result = result.filter(p => p.postedBy?.type === filters.posterType);
+        if (filters.listingType) result = result.filter(p => (p.listingType || 'Adoption') === filters.listingType);
         setFilteredPets(result);
     };
 
@@ -198,7 +123,7 @@ function PetFind() {
                 </button>
             </div>
 
-            {/* Search + Filter bar */}
+            {/* Search bar */}
             <div className="search-filter-bar">
                 <div className="search-input">
                     <FaSearch className="icon" />
@@ -209,26 +134,6 @@ function PetFind() {
                         value={filters.search}
                         onChange={handleFilterChange}
                     />
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <select name="type" value={filters.type} onChange={handleFilterChange} className="filter-select">
-                        <option value="">All Types</option>
-                        <option value="Dog">🐶 Dog</option>
-                        <option value="Cat">🐱 Cat</option>
-                        <option value="Bird">🐦 Bird</option>
-                        <option value="Rabbit">🐰 Rabbit</option>
-                    </select>
-                    <select name="gender" value={filters.gender} onChange={handleFilterChange} className="filter-select">
-                        <option value="">All Genders</option>
-                        <option value="Male">♂ Male</option>
-                        <option value="Female">♀ Female</option>
-                    </select>
-                    <select name="posterType" value={filters.posterType} onChange={handleFilterChange} className="filter-select">
-                        <option value="">All Posters</option>
-                        <option value="NGO">🏢 NGO</option>
-                        <option value="Owner">🏠 Individual</option>
-                        <option value="Shop">🛒 Pet Shop</option>
-                    </select>
                 </div>
             </div>
 
@@ -268,9 +173,10 @@ function PetFind() {
                                         <img
                                             src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
                                             alt={pet.name}
+                                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
                                         />
-                                        <span className={`status-badge ${pet.adoptionStatus.toLowerCase()}`}>
-                                            {pet.adoptionStatus}
+                                        <span className={`status-badge ${(pet.status || 'Available').toLowerCase()}`}>
+                                            {pet.status || 'Available'}
                                         </span>
                                         {pet.urgent && (
                                             <div className="urgent-ribbon">
@@ -283,15 +189,28 @@ function PetFind() {
                                     <div className="pet-info">
                                         {/* Name + Poster badge row */}
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                                            <h3 style={{ margin: 0 }}>{pet.name}</h3>
+                                            <h3 style={{ margin: 0 }}>
+                                                {pet.name} <NGOVerifiedBadge isVerified={pet.ngoVerified} compact />
+                                            </h3>
                                             <PosterBadge postedBy={pet.postedBy} />
                                         </div>
 
-                                        {/* Posted by name */}
+                                        {/* Posted by name + Rating */}
                                         {pet.postedBy && (
-                                            <p style={{ fontSize: '0.78rem', color: '#888', margin: '0 0 6px' }}>
-                                                by {pet.postedBy.name}
-                                            </p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                                <p style={{ fontSize: '0.78rem', color: '#888', margin: 0 }}>
+                                                    by <span style={{ fontWeight: 600 }}>{pet.postedBy.name}</span>
+                                                </p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: '#fdf4eb', padding: '1px 6px', borderRadius: '4px' }}>
+                                                    <FaStar size={9} color="#ffc107" />
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400e' }}>
+                                                        {pet.postedBy.avgRating?.toFixed(1) || '0.0'}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.65rem', color: '#92400e', opacity: 0.7 }}>
+                                                        ({pet.postedBy.reviewCount || 0})
+                                                    </span>
+                                                </div>
+                                            </div>
                                         )}
 
                                         {/* Breed · Age · Gender */}
@@ -314,6 +233,26 @@ function PetFind() {
                                             <span className={`chip ${pet.healthStatus === 'Healthy' ? 'chip-blue' : 'chip-orange'}`}>
                                                 {pet.healthStatus === 'Healthy' ? '💚' : '🩺'} {pet.healthStatus}
                                             </span>
+                                            {pet.status === 'Adopted' && (
+                                                <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #22c55e' }}>
+                                                    ✅ Adopted
+                                                </span>
+                                            )}
+                                            {pet.listingType === 'Sale' && pet.status !== 'Adopted' && (
+                                                <span style={{ background: '#FFF3CD', color: '#856404', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #ffc107' }}>
+                                                    🛒 For Sale {pet.price ? `· Rs.${pet.price.toLocaleString()}` : ''}
+                                                </span>
+                                            )}
+                                            {pet.quantity > 1 && pet.status !== 'Adopted' && (
+                                                <span style={{ background: '#f0fdf4', color: '#15803d', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #dcfce7' }}>
+                                                    🔢 {pet.quantity} Available
+                                                </span>
+                                            )}
+                                            {pet.listingType === 'Rehoming' && pet.status !== 'Adopted' && (
+                                                <span style={{ background: '#cfe2ff', color: '#0a58ca', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #b6d4fe' }}>
+                                                    🔄 Rehoming
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Personality pills */}
@@ -392,12 +331,13 @@ function PetFind() {
                     border-radius: var(--radius-lg);
                     overflow: hidden;
                     box-shadow: var(--shadow-md);
-                    transition: transform 0.22s, box-shadow 0.22s;
+                    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
                 }
-                .pet-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+                .pet-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
 
-                .pet-image { height: 210px; width: 100%; position: relative; }
-                .pet-image img { width: 100%; height: 100%; object-fit: cover; }
+                .pet-image { height: 210px; width: 100%; position: relative; overflow: hidden; }
+                .pet-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+                .pet-card:hover .pet-image img { transform: scale(1.08); }
 
                 .status-badge {
                     position: absolute; top: 0.8rem; right: 0.8rem;

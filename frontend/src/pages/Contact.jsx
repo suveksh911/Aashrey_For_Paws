@@ -2,28 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
 import StarRating from '../components/StarRating';
-
+import api from '../services/axios';
+import { useAuth } from '../context/AuthContext';
 
 function Contact() {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-    });
+    const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+    const [submitting, setSubmitting] = useState(false);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({ ...prev, name: user.name || '', email: user.email || '' }));
+        }
+    }, [user]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Save message to localStorage (backend-free demo)
-        const messages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-        messages.push({ ...formData, date: new Date().toLocaleString(), id: Date.now() });
-        localStorage.setItem('contactMessages', JSON.stringify(messages));
-        toast.success('Message sent successfully! We will get back to you soon. 🐾');
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setSubmitting(true);
+        try {
+            await api.post('/contact', formData);
+            toast.success('Message sent successfully! We will get back to you soon. 🐾');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        } catch {
+            toast.error('Failed to send message. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -75,7 +83,9 @@ function Contact() {
                             <label>Message</label>
                             <textarea name="message" value={formData.message} onChange={handleChange} required placeholder="How can we help?" rows="5"></textarea>
                         </div>
-                        <button type="submit" className="btn btn-primary">Send Message</button>
+                        <button type="submit" className="btn btn-primary" disabled={submitting}>
+                            {submitting ? 'Sending…' : 'Send Message'}
+                        </button>
                     </form>
                 </div>
             </div>
@@ -141,71 +151,67 @@ function FeedbackSection() {
     const [comment, setComment] = useState('');
     const [allFeedback, setAllFeedback] = useState([]);
     const [editingId, setEditingId] = useState(null);
-
-    // Logged-in user's name
-    const currentUser = localStorage.getItem('loggedInUser') || 'Anonymous';
+    const { user, isAuthenticated } = useAuth(); // Import from context
 
     useEffect(() => {
-        try {
-            const stored = JSON.parse(localStorage.getItem('siteFeedback'));
-            if (Array.isArray(stored)) setAllFeedback(stored);
-        } catch {
-            localStorage.removeItem('siteFeedback');
-        }
+        fetchFeedback();
     }, []);
 
-    const handleSubmit = (e) => {
+    const fetchFeedback = async () => {
+        try {
+            const res = await api.get('/feedback');
+            if (res.data.success) {
+                setAllFeedback(res.data.data);
+            }
+        } catch (err) {
+            console.error("Failed to load feedback", err);
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (rating === 0) { toast.warn("Please select a star rating!"); return; }
+        if (!isAuthenticated) { toast.warn("Please login to submit feedback!"); return; }
 
-        let existing = [];
         try {
-            const raw = localStorage.getItem('siteFeedback');
-            if (raw) existing = JSON.parse(raw);
-        } catch { existing = []; }
-        if (!Array.isArray(existing)) existing = [];
-
-        let updated;
-        if (editingId) {
-            updated = existing.map(fb =>
-                fb.id === editingId
-                    ? { ...fb, rating, comment, date: new Date().toLocaleDateString() + ' (edited)' }
-                    : fb
-            );
-            toast.success("Feedback updated!");
-            setEditingId(null);
-        } else {
-            const newFeedback = {
-                id: Date.now(),
-                user: currentUser,
-                rating,
-                comment,
-                date: new Date().toLocaleDateString()
-            };
-            updated = [newFeedback, ...existing];
-            toast.success("Thank you for your feedback! 🐾");
+            if (editingId) {
+                const res = await api.put(`/feedback/${editingId}`, { rating, comment });
+                if (res.data.success) {
+                    toast.success("Feedback updated!");
+                    setEditingId(null);
+                    fetchFeedback();
+                }
+            } else {
+                const res = await api.post('/feedback', { rating, comment });
+                if (res.data.success) {
+                    toast.success("Thank you for your feedback! 🐾");
+                    fetchFeedback();
+                }
+            }
+            setRating(0);
+            setComment('');
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to submit feedback.");
         }
-
-        localStorage.setItem('siteFeedback', JSON.stringify(updated));
-        setAllFeedback(updated);
-        setRating(0);
-        setComment('');
     };
 
     const handleEdit = (fb) => {
         setRating(fb.rating);
         setComment(fb.comment);
-        setEditingId(fb.id);
+        setEditingId(fb._id);
         document.querySelector('.feedback-section')?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (!window.confirm("Delete this review?")) return;
-        const updated = allFeedback.filter(fb => fb.id !== id);
-        setAllFeedback(updated);
-        localStorage.setItem('siteFeedback', JSON.stringify(updated));
-        toast.info("Review deleted.");
-        if (editingId === id) { setEditingId(null); setRating(0); setComment(''); }
+        try {
+            await api.delete(`/feedback/${id}`);
+            toast.info("Review deleted.");
+            fetchFeedback();
+            if (editingId === id) { setEditingId(null); setRating(0); setComment(''); }
+        } catch (err) {
+            toast.error("Failed to delete review.");
+        }
     };
 
     return (
@@ -220,14 +226,15 @@ function FeedbackSection() {
                     <StarRating rating={rating} setRating={setRating} />
                 </div>
                 <textarea
-                    placeholder="Tell us what you think..."
+                    placeholder={isAuthenticated ? "Tell us what you think..." : "Please login to leave feedback..."}
                     rows="3"
                     value={comment}
+                    disabled={!isAuthenticated}
                     onChange={(e) => setComment(e.target.value)}
                     style={{ width: '100%', marginBottom: '1rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
                 />
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn btn-primary" disabled={!isAuthenticated}>
                         {editingId ? '✏️ Update Feedback' : '📝 Submit Feedback'}
                     </button>
                     {editingId && (
@@ -245,22 +252,22 @@ function FeedbackSection() {
                     <p style={{ color: '#bbb', fontStyle: 'italic' }}>No reviews yet — be the first! 🐾</p>
                 ) : (
                     allFeedback.map((fb) => (
-                        <div key={fb.id} className="fb-review-card">
+                        <div key={fb._id} className="fb-review-card">
                             <div className="fb-review-top">
                                 <div className="fb-user-info">
                                     <FaUserCircle size={28} color="#c8a98a" />
                                     <div>
-                                        <span className="fb-username">{fb.user || 'Anonymous'}</span>
-                                        <span className="fb-date">{fb.date}</span>
+                                        <span className="fb-username">{fb.userName || 'Anonymous'}</span>
+                                        <span className="fb-date">{new Date(fb.createdAt).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <StarRating rating={fb.rating} editable={false} />
-                                    {/* Only the author sees Edit / Delete */}
-                                    {fb.user === currentUser && (
+                                    {/* Only the author or admin sees Edit / Delete */}
+                                    {(fb.userId === user?._id || user?.role === 'Admin') && (
                                         <div className="review-actions">
-                                            <button onClick={() => handleEdit(fb)} className="icon-btn edit-btn" title="Edit"><FaEdit /></button>
-                                            <button onClick={() => handleDelete(fb.id)} className="icon-btn delete-btn" title="Delete"><FaTrash /></button>
+                                            {fb.userId === user?._id && <button onClick={() => handleEdit(fb)} className="icon-btn edit-btn" title="Edit"><FaEdit /></button>}
+                                            <button onClick={() => handleDelete(fb._id)} className="icon-btn delete-btn" title="Delete"><FaTrash /></button>
                                         </div>
                                     )}
                                 </div>
