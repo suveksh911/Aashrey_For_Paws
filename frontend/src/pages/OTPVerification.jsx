@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Loader } from "lucide-react";
 import Alert from "./Alert";
-import config from '../config/config';
+import config from '../config';
 
 const API_BASE_URL = config.apiUrl;
 

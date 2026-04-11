@@ -15,7 +15,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Legend
 } from 'recharts';
-import VaccinationReminder from '../components/VaccinationReminder';
+import VaccinationReminder from '../components/pet/VaccinationReminder';
 import useVaccinationReminders from '../hooks/useVaccinationReminders';
 const NGOProfilePage = React.lazy(() => import('./RoleProfiles').then(m => ({ default: m.default })));
 const Notifications = React.lazy(() => import('./Notifications'));
@@ -1236,7 +1236,13 @@ export default function NGODashboard() {
                         </button>
                     ))}
 
-
+                    {/* Explore Platform */}
+                    <div className="pt-4 mt-2 border-t border-white/10">
+                        <p className="px-4 text-[10px] font-black tracking-widest text-[#FFAB91] uppercase mb-2">Explore Platform</p>
+                        <Link to="/" className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-200 hover:bg-white/8 hover:text-white transition-all">
+                            <FaGlobe className="text-base" /> Go to Main Site
+                        </Link>
+                    </div>
                 </nav>
 
                 {/* Logout */}

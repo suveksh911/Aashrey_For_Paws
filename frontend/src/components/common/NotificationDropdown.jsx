@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaTimes, FaBell, FaSpinner } from 'react-icons/fa';
-import api from '../services/axios';
+import api from '../../services/axios';
 
 const NotificationDropdown = ({ onClose }) => {
     const [notifications, setNotifications] = useState([]);

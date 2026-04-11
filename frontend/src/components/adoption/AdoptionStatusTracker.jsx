@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/axios';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/axios';
 import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaPaw, FaSpinner } from 'react-icons/fa';
 
 const AdoptionStatusTracker = () => {

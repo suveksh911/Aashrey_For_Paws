@@ -1,21 +1,61 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaTimesCircle } from 'react-icons/fa';
+import React from "react";
+import Navbar from "../components/common/Navbar";
+import { XCircle, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const PaymentFailure = () => {
-    return (
-        <div className="container" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-            <FaTimesCircle size={80} color="#dc3545" style={{ marginBottom: '2rem' }} />
-            <h1>Payment Failed</h1>
-            <p style={{ fontSize: '1.2rem', color: '#666' }}>
-                We were unable to process your payment.<br />
-                Please try again or contact support if the issue persists.
-            </p>
-            <div style={{ marginTop: '2rem' }}>
-                <Link to="/donate" className="btn btn-primary" style={{ textDecoration: 'none' }}>Try Again</Link>
+const PaymentFailurePage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="flex items-center justify-center h-[calc(100vh-80px)] px-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+              <XCircle size={32} />
             </div>
+
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Payment Failed
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Your Khalti payment could not be processed.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/cart")}
+                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+              >
+                <ArrowLeft size={18} />
+                Return to Cart & Try Again
+              </button>
+
+              <button
+                onClick={() => navigate("/home")}
+                className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Go to Home
+              </button>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <p className="text-sm text-gray-500">
+                Need help? Contact support at{" "}
+                <a
+                  href="mailto:support@agriassist.com"
+                  className="text-purple-600 font-semibold"
+                >
+                  support@agriassist.com
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-export default PaymentFailure;
+export default PaymentFailurePage;

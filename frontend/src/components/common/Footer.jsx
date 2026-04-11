@@ -1,272 +1,208 @@
-import React, { useState } from 'react';
-import { FaFilter, FaTimes } from 'react-icons/fa';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { FaPaw, FaHeart, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 
-const AdvancedSearch = ({ onFilterChange }) => {
-    const [filters, setFilters] = useState({
-        type: '',
-        breed: '',
-        gender: '',
-        age: '',
-        listingType: '',
-        location: ''
-    });
-
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        const newFilters = { ...filters, [name]: value };
-        setFilters(newFilters);
-        onFilterChange(newFilters);
-    };
-
-    const clearFilters = () => {
-        const reset = { type: '', breed: '', gender: '', age: '', listingType: '', location: '' };
-        setFilters(reset);
-        onFilterChange(reset);
-    };
-
-    const hasActiveFilters = Object.values(filters).some(v => v !== '');
-    const activeCount = Object.values(filters).filter(v => v !== '').length;
+export default function Footer() {
+    const location = useLocation();
+    
+    // Hide footer on dashboard and full-screen routes
+    const hiddenRoutes = ['/admin', '/ngo', '/user', '/owner', '/adopter'];
+    if (hiddenRoutes.some(route => location.pathname.startsWith(route))) {
+        return null;
+    }
 
     return (
-        <div className="adv-filter-container">
-            <div className="adv-filter-header">
-                <div className="adv-filter-title">
-                    <FaFilter size={13} />
-                    <span>Filters</span>
-                    {hasActiveFilters && (
-                        <span className="adv-filter-count">{activeCount}</span>
-                    )}
+        <footer className="footer-container">
+            <div className="footer-content">
+                
+                {/* Brand & Socials */}
+                <div className="footer-brand">
+                    <div className="footer-logo">
+                        <span style={{ fontSize: '1.5rem', marginRight: '8px' }}>🐾</span>
+                        <span className="font-black text-xl">Aashrey For Paws</span>
+                    </div>
+                    <p className="footer-desc">
+                        Connecting loving homes with pets in need. Every adoption saves a life and brings joy to a family.
+                    </p>
+                    <div className="social-icons">
+                        <a href="#"><FaFacebook /></a>
+                        <a href="#"><FaTwitter /></a>
+                        <a href="#"><FaInstagram /></a>
+                    </div>
                 </div>
-                <button className="adv-toggle-btn" onClick={() => setIsExpanded(!isExpanded)}>
-                    {isExpanded ? 'Hide' : 'Show Filters'}
-                </button>
+                
+                {/* Quick Links */}
+                <div className="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><Link to="/">Home</Link></li>
+                        <li><Link to="/pet-find">Adopt a Pet</Link></li>
+                        <li><Link to="/donate">Donate</Link></li>
+                        <li><Link to="/community">Community</Link></li>
+                        <li><Link to="/contact">Contact Us</Link></li>
+                    </ul>
+                </div>
+                
+                {/* Contact Info */}
+                <div className="footer-contact">
+                    <h4>Contact Us</h4>
+                    <ul className="contact-list">
+                        <li><span className="c-icon">📍</span> <span>123 Animal Shelter Road, Kathmandu</span></li>
+                        <li><span className="c-icon">📞</span> <span>+977 1234567890</span></li>
+                        <li><span className="c-icon">✉️</span> <span>info@aashreyforpaws.org</span></li>
+                    </ul>
+                </div>
+
             </div>
 
-            {isExpanded && (
-                <div className="adv-filter-body">
-                    <div className="adv-filter-grid">
-                        {/* Pet Type */}
-                        <div className="adv-filter-group">
-                            <label>Pet Type</label>
-                            <select name="type" value={filters.type} onChange={handleChange}>
-                                <option value="">All Types</option>
-                                <option value="Dog">🐕 Dog</option>
-                                <option value="Cat">🐈 Cat</option>
-                                <option value="Others">🐾 Others</option>
-                            </select>
-                        </div>
-
-                        {/* Breed - Back to Select for "Category Narrowing" */}
-                        <div className="adv-filter-group">
-                            <label>Breed Type</label>
-                            <select name="breed" value={filters.breed} onChange={handleChange}>
-                                <option value="">Any Breed</option>
-                                <option value="Golden Retriever">Golden Retriever</option>
-                                <option value="German Shepherd">German Shepherd</option>
-                                <option value="Labrador">Labrador</option>
-                                <option value="Pug">Pug</option>
-                                <option value="Husky">Husky</option>
-                                <option value="Persian">Persian Cat</option>
-                                <option value="Siamese">Siamese Cat</option>
-                                <option value="Indie/Mixed">Indie / Mixed</option>
-                            </select>
-                        </div>
-
-                        {/* Gender */}
-                        <div className="adv-filter-group">
-                            <label>Gender</label>
-                            <select name="gender" value={filters.gender} onChange={handleChange}>
-                                <option value="">Any Gender</option>
-                                <option value="Male">♂ Male</option>
-                                <option value="Female">♀ Female</option>
-                            </select>
-                        </div>
-
-                        {/* Age Range - Back to Selection for true filtering */}
-                        <div className="adv-filter-group">
-                            <label>Age Range</label>
-                            <select name="age" value={filters.age} onChange={handleChange}>
-                                <option value="">Any Age</option>
-                                <option value="Puppy/Kitten">Puppy/Kitten (0-1 yr)</option>
-                                <option value="Young">Young (1-3 yrs)</option>
-                                <option value="Adult">Adult (3-7 yrs)</option>
-                                <option value="Senior">Senior (7+ yrs)</option>
-                            </select>
-                        </div>
-
-                        {/* Listing Type */}
-                        <div className="adv-filter-group">
-                            <label>Listing Type</label>
-                            <select name="listingType" value={filters.listingType} onChange={handleChange}>
-                                <option value="">All Listings</option>
-                                <option value="Adoption">🏠 Adoption (Free)</option>
-                                <option value="Sale">🛒 For Sale</option>
-                                <option value="Rehoming">🔄 Rehoming</option>
-                            </select>
-                        </div>
-
-                        {/* Location - Back to City Selection */}
-                        <div className="adv-filter-group">
-                            <label>Region</label>
-                            <select name="location" value={filters.location} onChange={handleChange}>
-                                <option value="">All Regions</option>
-                                <option value="Kathmandu">Kathmandu</option>
-                                <option value="Lalitpur">Lalitpur</option>
-                                <option value="Pokhara">Pokhara</option>
-                                <option value="Biratnagar">Biratnagar</option>
-                                <option value="Dharan">Dharan</option>
-                                <option value="Itahari">Itahari</option>
-                                <option value="Chitwan">Chitwan</option>
-                                <option value="Butwal">Butwal</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Clear */}
-                    {hasActiveFilters && (
-                        <div className="adv-filter-actions">
-                            <button className="adv-clear-btn" onClick={clearFilters}>
-                                <FaTimes size={11} /> Clear All Filters
-                            </button>
-                        </div>
-                    )}
+            <div className="footer-bottom-wrapper">
+                <div className="footer-bottom">
+                    <p>&copy; {new Date().getFullYear()} Aashrey For Paws. All rights reserved.</p>
+                    <p style={{ display: 'flex', alignItems: 'center' }}>Made with <FaHeart className="heart-icon" /> for animals</p>
                 </div>
-            )}
+            </div>
 
             <style>{`
-                .adv-filter-container {
-                    background: white;
-                    border-radius: 16px;
-                    border: 1px solid #f0f0f0;
-                    margin-bottom: 2rem;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                    overflow: hidden;
+                .footer-container {
+                    background-color: #5d4037; /* Dark brown from image */
+                    color: #fff;
+                    padding: 4rem 2rem 1.5rem;
+                    font-family: 'Inter', sans-serif;
                 }
-                .adv-filter-header {
+                .footer-content {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1.5fr;
+                    gap: 3rem;
+                    margin-bottom: 3rem;
+                }
+                
+                /* Brand Section */
+                .footer-brand {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.2rem;
+                }
+                .footer-logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    color: #fff;
+                }
+                .paw-icon {
+                    color: #5b4685; /* Purple paw shade from logo */
+                    filter: brightness(1.5);
+                }
+                .footer-desc {
+                    color: #d7ccc8;
+                    line-height: 1.6;
+                    font-size: 0.95rem;
+                    max-width: 320px;
+                }
+                .social-icons {
+                    display: flex;
+                    gap: 0.8rem;
+                    margin-top: 0.5rem;
+                }
+                .social-icons a {
+                    color: #fff;
+                    background: rgba(255, 255, 255, 0.1);
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    font-size: 1.1rem;
+                    transition: background 0.2s, transform 0.2s;
+                }
+                .social-icons a:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-2px);
+                }
+
+                /* Links Section */
+                .footer-links h4, .footer-contact h4 {
+                    font-size: 1.15rem;
+                    font-weight: 600;
+                    margin-bottom: 1.5rem;
+                    color: #ffccbc; /* Light peach heading from image */
+                }
+                .footer-links ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                .footer-links a {
+                    color: #d7ccc8;
+                    text-decoration: none;
+                    transition: color 0.2s;
+                    font-size: 0.95rem;
+                }
+                .footer-links a:hover {
+                    color: #fff;
+                }
+
+                /* Contact Section */
+                .contact-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.2rem;
+                }
+                .contact-list li {
+                    display: flex;
+                    gap: 12px;
+                    color: #d7ccc8;
+                    font-size: 0.95rem;
+                    align-items: flex-start;
+                }
+                .c-icon {
+                    color: #ffab91;
+                    margin-top: 3px;
+                    font-size: 1.1rem;
+                }
+
+                /* Bottom Section */
+                .footer-bottom-wrapper {
+                    background-color: rgba(0, 0, 0, 0.15); /* Darker strip at bottom */
+                    margin: 0 -2rem -1.5rem; /* Stretch out of container padding */
+                    padding: 1.5rem 2rem;
+                }
+                .footer-bottom {
+                    max-width: 1200px;
+                    margin: 0 auto;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 1rem 1.5rem;
+                    color: #a1887f;
+                    font-size: 0.85rem;
                 }
-                .adv-filter-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 0.95rem;
-                    font-weight: 700;
-                    color: #3E2723;
+                
+                .heart-icon {
+                    color: #ff8a65;
+                    display: inline;
+                    margin: 0 4px;
                 }
-                .adv-filter-count {
-                    background: #5D4037;
-                    color: white;
-                    font-size: 0.7rem;
-                    font-weight: 800;
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .adv-toggle-btn {
-                    background: none;
-                    border: 1.5px solid #e0e0e0;
-                    padding: 6px 16px;
-                    border-radius: 20px;
-                    cursor: pointer;
-                    font-size: 0.82rem;
-                    font-weight: 600;
-                    color: #5D4037;
-                    transition: all 0.2s;
-                }
-                .adv-toggle-btn:hover {
-                    background: #5D4037;
-                    color: white;
-                    border-color: #5D4037;
-                }
-                .adv-filter-body {
-                    padding: 0 1.5rem 1.5rem;
-                    border-top: 1px solid #f5f5f5;
-                }
-                .adv-filter-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 1.25rem;
-                    padding-top: 1.25rem;
-                }
-                .adv-filter-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 6px;
-                }
-                .adv-filter-group label {
-                    font-size: 0.78rem;
-                    font-weight: 700;
-                    color: #888;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                .adv-filter-group select, .adv-filter-group input {
-                    padding: 10px 12px;
-                    border: 1.5px solid #e8e8e8;
-                    border-radius: 10px;
-                    font-size: 0.9rem;
-                    font-weight: 500;
-                    color: #333;
-                    background: #fafafa;
-                    cursor: text;
-                    transition: border-color 0.2s, box-shadow 0.2s;
-                    width: 100%;
-                    box-sizing: border-box;
-                }
-                .adv-filter-group select {
-                    cursor: pointer;
-                    appearance: auto;
-                }
-                .adv-filter-group select:focus, .adv-filter-group input:focus {
-                    outline: none;
-                    border-color: #5D4037;
-                    box-shadow: 0 0 0 3px rgba(93, 64, 55, 0.1);
-                }
-                .adv-filter-actions {
-                    display: flex;
-                    justify-content: flex-end;
-                    margin-top: 1.25rem;
-                    padding-top: 1rem;
-                    border-top: 1px solid #f5f5f5;
-                }
-                .adv-clear-btn {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    background: #FFF5F5;
-                    color: #C53030;
-                    border: 1px solid #FED7D7;
-                    padding: 8px 18px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    font-size: 0.82rem;
-                    font-weight: 700;
-                    transition: all 0.2s;
-                }
-                .adv-clear-btn:hover {
-                    background: #FED7D7;
-                }
+
                 @media (max-width: 768px) {
-                    .adv-filter-grid {
-                        grid-template-columns: repeat(2, 1fr);
-                    }
-                }
-                @media (max-width: 480px) {
-                    .adv-filter-grid {
+                    .footer-content {
                         grid-template-columns: 1fr;
+                        gap: 2.5rem;
+                    }
+                    .footer-bottom {
+                        flex-direction: column;
+                        gap: 1rem;
+                        text-align: center;
                     }
                 }
             `}</style>
-        </div>
+        </footer>
     );
-};
-
-export default AdvancedSearch;
+}

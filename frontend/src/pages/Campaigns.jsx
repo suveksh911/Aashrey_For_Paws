@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { FaHandHoldingHeart, FaSpinner, FaTimes, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import NGOVerifiedBadge from '../components/NGOVerifiedBadge';
+import NGOVerifiedBadge from '../components/ngo/NGOVerifiedBadge';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,8 +13,8 @@ function Campaigns() {
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
 
-    // Donation modal state
-    const [donateModal, setDonateModal] = useState(null); // campaign object or null
+   
+    const [donateModal, setDonateModal] = useState(null); 
     const [donateAmount, setDonateAmount] = useState('');
     const [paying, setPaying] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -34,7 +34,7 @@ function Campaigns() {
         fetchCampaigns();
     }, []);
 
-    // Handle Khalti callback verification
+    
     useEffect(() => {
         const pidx = searchParams.get('pidx');
         if (pidx) {

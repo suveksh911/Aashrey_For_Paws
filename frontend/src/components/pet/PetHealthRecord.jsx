@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaSyringe, FaNotesMedical, FaCalendarAlt, FaTrash } from 'react-icons/fa';
-import api from '../services/axios';
-import { useAuth } from '../context/AuthContext';
+import api from '../../services/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const PetHealthRecord = ({ pet, petId, ownerId }) => {
     const { id } = useParams();

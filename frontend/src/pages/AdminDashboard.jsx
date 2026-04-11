@@ -6,7 +6,7 @@ import api from '../services/axios';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import Skeleton from '../components/Skeleton';
+import Skeleton from '../components/common/Skeleton';
 import {
     FaUsers, FaPaw, FaClipboardList, FaHeart, FaBuilding,
     FaTrash, FaCheck, FaTimes, FaSearch, FaShieldAlt,
@@ -15,7 +15,7 @@ import {
     FaEnvelope, FaReply, FaPaperPlane, FaGlobe, FaCheckCircle, FaExclamationTriangle, FaInfoCircle
 } from 'react-icons/fa';
 
-// ─── Default mock data ─────────────────────────────────────────────────────────
+
 const DEFAULT_USERS = [
     { _id: '1', name: 'Anu Budhathoki', email: 'anu@example.com', role: 'Adopter', status: 'Active', isVerified: true, joined: '2025-10-01', phone: '9841000001' },
     { _id: '2', name: 'Paw Helpers NGO', email: 'contact@pawhelpers.org', role: 'NGO', status: 'Active', isVerified: false, joined: '2025-10-05', phone: '9841000002' },
@@ -1264,7 +1264,13 @@ export default function AdminDashboard() {
                         </button>
                     ))}
 
-
+                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #334155' }}>
+                        <p style={{ padding: '0 1.2rem', fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Explore Platform</p>
+                        <Link to="/" className="ad-nav-btn" style={{ color: '#f97316' }}>
+                            <span className="ad-nav-icon"><FaGlobe /></span>
+                            <span>Go to Main Site</span>
+                        </Link>
+                    </div>
                 </nav>
             </aside>
 

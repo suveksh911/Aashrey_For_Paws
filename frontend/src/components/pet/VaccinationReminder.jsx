@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaSyringe, FaCheckCircle, FaExclamationTriangle, FaClock, FaPlus, FaTimes, FaEdit, FaTrash, FaExclamationCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import api from '../services/axios';
+import api from '../../services/axios';
 
 const STATUS_CONFIG = {
     Upcoming: { label: 'Upcoming', color: 'bg-blue-100 text-blue-700', icon: <FaClock className="inline mr-1" />, border: 'border-blue-200' },

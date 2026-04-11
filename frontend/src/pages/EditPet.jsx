@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import PetHealthRecords from '../components/PetHealthRecords';
-import MultiImageUpload from '../components/MultiImageUpload';
+import PetHealthRecords from '../components/pet/PetHealthRecords';
+import MultiImageUpload from '../components/pet//MultiImageUpload';
 import { useAuth } from '../context/AuthContext';
 
 function EditPet() {

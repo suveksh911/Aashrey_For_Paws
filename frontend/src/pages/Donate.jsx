@@ -1,146 +1,204 @@
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope, FaStar, FaUserCircle, FaSpinner } from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FaHeart, FaPaw, FaRegHeart, FaCheckCircle, FaSpinner, FaArrowLeft, FaShieldAlt } from 'react-icons/fa';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 
-// ────────────────────────────────────────────────
-//  SECTION: User Messages Tab (NGO Style)
-// ────────────────────────────────────────────────
-export const UserMessagesTab = ({ messages, loading }) => {
-    const [expanded, setExpanded] = useState(null);
+const PRESET_AMOUNTS = [500, 1000, 2500, 5000];
 
-    if (loading) return <div className="flex justify-center py-16"><FaSpinner className="animate-spin text-[#8D6E63]" size={28} /></div>;
+// Fallback NGOs if the database is empty or the API fails
+const DEMO_NGOS = [
+    { _id: 'mayakochhaano_5', name: 'Maya ko Chhaano', location: 'Kathmandu', isVerified: true },
+    { _id: 'animalnepal_1', name: 'Animal Nepal', location: 'Nakkhu, Lalitpur', isVerified: true },
+    { _id: 'snehacare_2', name: "Sneha's Care", location: 'Bhaisepati, Lalitpur', isVerified: true },
+];
 
-    if (messages.length === 0) return (
-        <div className="text-center py-16 bg-gradient-to-b from-white to-gray-50 rounded-2xl border border-dashed border-gray-300 hover:border-[#5D4037] hover:bg-orange-50 transition-all duration-300 group">
-            <FaEnvelope className="mx-auto text-gray-300 mb-3 group-hover:scale-110 group-hover:rotate-3 group-hover:text-[#db2777] transition-transform duration-300" size={40} />
-            <p className="text-gray-500 font-medium font-bold">No messages yet</p>
-            <p className="text-xs text-gray-400 mt-1 font-medium">Your inquiries to the Admin will appear here.</p>
-        </div>
-    );
+export default function Donate() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
+    
+    // Check for ngoId in query params (e.g., /donate?ngoId=123)
+    const queryParams = new URLSearchParams(location.search);
+    const initialNgoId = queryParams.get('ngoId');
 
-    return (
-        <div className="space-y-4 px-1">
-            {messages.map(msg => (
-                <div key={msg._id} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-transparent hover:border-l-[#5D4037]" onClick={() => setExpanded(expanded === msg._id ? null : msg._id)}>
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <div className="font-black text-[#3E2723] text-lg">{msg.subject || 'General Inquiry'}</div>
-                            <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{new Date(msg.createdAt).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                        </div>
-                        {msg.isReplied && <span className="bg-[#1e293b] text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm">Replied</span>}
-                    </div>
-                    
-                    {expanded === msg._id ? (
-                        <div className="mt-4 pt-4 border-t border-gray-50 animate-in fade-in slide-in-from-top-1 duration-300">
-                            <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 font-medium">{msg.message}</div>
-                            {msg.replies?.length > 0 && (
-                                <div className="space-y-4 ml-2 border-l-2 border-[#1e293b]/10 pl-5">
-                                    <div className="text-[10px] font-black text-[#1e293b] uppercase tracking-[0.2em] mb-2 opacity-60">Admin Support Response</div>
-                                    {msg.replies.map((reply, i) => (
-                                        <div key={i} className="bg-[#f8fafc] border border-[#e2e8f0] p-4 rounded-2xl relative shadow-sm before:content-[''] before:absolute before:-left-[21px] before:top-5 before:w-4 before:h-0.5 before:bg-[#e2e8f0]">
-                                            <p className="text-sm text-[#0f172a] font-semibold leading-relaxed">{reply.message}</p>
-                                            <span className="text-[10px] text-[#64748b] font-bold mt-2 block opacity-70 tracking-tight">{new Date(reply.createdAt).toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="text-sm text-gray-400 line-clamp-1 italic mt-1 font-medium opacity-80">
-                            {msg.message}
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
-};
-
-// ────────────────────────────────────────────────
-//  SECTION: User Reviews Tab (NGO Style)
-// ────────────────────────────────────────────────
-export const UserReviewsTab = ({ userId }) => {
-    const [reviews, setReviews] = useState([]);
+    const [ngos, setNgos] = useState([]);
+    const [selectedNgo, setSelectedNgo] = useState(null);
+    const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        (async () => {
+        const fetchNgos = async () => {
             try {
-                const res = await api.get(`/reviews/ngo/${userId}`);
-                setReviews(res.data.data || []);
-            } catch { toast.error('Failed to load reviews'); }
-            finally { setLoading(false); }
-        })();
-    }, [userId]);
+                const res = await api.get('/admin/ngos/public');
+                const fetchedNgos = res.data.success ? res.data.data : DEMO_NGOS;
+                setNgos(fetchedNgos);
+                
+                // Pre-select NGO if ID provided in URL
+                if (initialNgoId) {
+                    const matched = fetchedNgos.find(n => n._id === initialNgoId);
+                    if (matched) setSelectedNgo(matched);
+                }
+            } catch (err) {
+                setNgos(DEMO_NGOS);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNgos();
+    }, [initialNgoId]);
 
-    if (loading) return <div className="flex justify-center py-16"><FaSpinner className="animate-spin text-[#8D6E63]" size={28} /></div>;
+    const handleDonate = async () => {
+        if (!isAuthenticated) return toast.info('Please login to make a donation');
+        if (!selectedNgo) return toast.error('Please select an NGO');
+        if (!amount || Number(amount) < 10) return toast.error('Minimum donation is Rs. 10');
 
-    if (reviews.length === 0) return (
-        <div className="text-center py-16 bg-gradient-to-b from-white to-gray-50 rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                <FaStar className="text-gray-200" size={32} />
-            </div>
-            <p className="text-gray-500 font-bold text-lg">No reviews yet</p>
-            <p className="text-xs text-gray-400 mt-1 font-medium">Feedback from the community will appear here.</p>
+        setSubmitting(true);
+        try {
+            const res = await api.post('/payment/initiate', {
+                amount: Number(amount),
+                purpose: 'Donation',
+                referenceId: selectedNgo._id,
+                itemName: `Donation to ${selectedNgo.name}`,
+                returnUrl: `${window.location.origin}/khalti-callback`
+            });
+
+            if (res.data.success && res.data.payment_url) {
+                window.location.href = res.data.payment_url;
+            } else {
+                toast.error('Failed to initiate payment.');
+                setSubmitting(false);
+            }
+        } catch (err) {
+            toast.error('Error connecting to payment gateway');
+            setSubmitting(false);
+        }
+    };
+
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
+            <FaPaw className="animate-bounce text-[#8D6E63]" size={40} />
         </div>
     );
-
-    const averageRating = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length);
 
     return (
-        <div className="space-y-6 px-1">
-            <div className="bg-gradient-to-br from-[#FFF9F5] to-white rounded-2xl p-6 border border-amber-100 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                <div>
-                    <h2 className="text-2xl font-black text-[#5D4037] tracking-tight">My Reputation</h2>
-                    <p className="text-sm text-gray-500 font-semibold opacity-80">What others are saying about your contributions.</p>
-                </div>
-                <div className="bg-white px-6 py-4 rounded-2xl border border-amber-100 shadow-sm flex items-center gap-4">
-                    <div className="text-center">
-                        <div className="text-4xl font-black text-[#5D4037] leading-none mb-1">{averageRating.toFixed(1)}</div>
-                        <div className="flex gap-0.5 justify-center">
-                            {[1, 2, 3, 4, 5].map(s => (
-                                <FaStar key={s} size={12} color={s <= Math.round(averageRating) ? '#f59e0b' : '#d1d5db'} />
-                            ))}
-                        </div>
-                    </div>
-                    <div className="h-10 w-[1px] bg-amber-100 mx-2"></div>
-                    <div>
-                        <div className="text-xl font-black text-[#5D4037] leading-none tracking-tight">{reviews.length}</div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase mt-1 tracking-widest leading-none">Total Reviews</div>
-                    </div>
-                </div>
-            </div>
+        <div className="min-h-screen bg-[#FDFBF7] py-12 px-4">
+            <div className="max-w-4xl mx-auto">
+                <button onClick={() => navigate(-1)} className="mb-8 flex items-center gap-2 text-[#8D6E63] font-bold hover:gap-3 transition-all">
+                    <FaArrowLeft /> Back
+                </button>
 
-            <div className="space-y-4">
-                {reviews.map((r, i) => (
-                    <div key={i} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-[#5D4037] border border-gray-100 shadow-sm">
-                                    <FaUserCircle size={28} className="opacity-80" />
-                                </div>
-                                <div>
-                                    <div className="font-extrabold text-[#3E2723] text-base leading-tight mb-1">{r.userName || 'Anonymous User'}</div>
-                                    <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest opacity-70">{new Date(r.createdAt || r.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                                </div>
-                            </div>
-                            <div className="flex gap-1 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
-                                {[1, 2, 3, 4, 5].map(s => (
-                                    <FaStar key={s} size={14} color={s <= r.rating ? '#f59e0b' : '#e5e7eb'} />
-                                ))}
-                            </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                    {/* Left: Info */}
+                    <div className="space-y-6">
+                        <div className="inline-block p-3 bg-red-50 rounded-2xl">
+                            <FaHeart className="text-red-500 text-2xl" />
                         </div>
-                        {r.comment && (
-                            <div className="relative">
-                                <div className="text-gray-600 text-sm leading-relaxed bg-gray-50/80 p-4 rounded-2xl font-medium italic border border-gray-50">
-                                    "{r.comment}"
+                        <h1 className="text-4xl font-black text-[#3E2723] leading-tight">
+                            Help us provide a <span className="text-[#8D6E63]">better life</span> for every animal.
+                        </h1>
+                        <p className="text-gray-600 leading-relaxed font-medium">
+                            Your generous contribution directly supports animal welfare organizations in providing food, medical care, and shelter to abandoned pets across Nepal.
+                        </p>
+                        
+                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                            <h3 className="font-bold text-[#5D4037]">Where your money goes:</h3>
+                            <ul className="space-y-3">
+                                {[
+                                    '100% direct transfer to the selected NGO',
+                                    'Critical medical emergencies & vaccinations',
+                                    'Daily nutrition for sheltered animals',
+                                    'Rescue operations and rehabilitation'
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-center gap-3 text-sm text-gray-500 font-medium">
+                                        <FaCheckCircle className="text-green-500" /> {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Right: Form */}
+                    <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-amber-900/5 border border-amber-100">
+                        <h2 className="text-xl font-bold text-[#3E2723] mb-6">Make a Donation</h2>
+                        
+                        <div className="space-y-6">
+                            {/* NGO Selector */}
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Select NGO</label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {ngos.map(ngo => (
+                                        <button
+                                            key={ngo._id}
+                                            onClick={() => setSelectedNgo(ngo)}
+                                            className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                                                selectedNgo?._id === ngo._id 
+                                                ? 'border-[#8D6E63] bg-amber-50' 
+                                                : 'border-gray-50 bg-gray-50 hover:border-amber-100'
+                                            }`}
+                                        >
+                                            <div className="text-left">
+                                                <p className={`font-bold text-sm ${selectedNgo?._id === ngo._id ? 'text-[#5D4037]' : 'text-gray-600'}`}>{ngo.name}</p>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase">{ngo.location}</p>
+                                            </div>
+                                            {selectedNgo?._id === ngo._id && <FaRegHeart className="text-[#8D6E63]" />}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+
+                            {/* Amount Selector */}
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Donation Amount (Rs)</label>
+                                <div className="grid grid-cols-4 gap-2 mb-4">
+                                    {PRESET_AMOUNTS.map(amt => (
+                                        <button
+                                            key={amt}
+                                            onClick={() => setAmount(amt.toString())}
+                                            className={`py-3 rounded-xl text-sm font-black transition-all ${
+                                                amount === amt.toString()
+                                                ? 'bg-[#5D4037] text-white shadow-lg'
+                                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {amt}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rs.</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter custom amount"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-[#8D6E63] font-bold text-[#3E2723]"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleDonate}
+                                disabled={submitting}
+                                className="w-full bg-[#5D4037] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#3E2723] transition-all disabled:opacity-50 shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3"
+                            >
+                                {submitting ? (
+                                    <><FaSpinner className="animate-spin" /> Processing...</>
+                                ) : (
+                                    <>Donate Now</>
+                                )}
+                            </button>
+
+                            <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1 font-bold">
+                                <FaShieldAlt /> Secure Khalti Payment Gateway
+                            </p>
+                        </div>
                     </div>
-                ))}
+                </div>
             </div>
         </div>
     );
-};
+}
+

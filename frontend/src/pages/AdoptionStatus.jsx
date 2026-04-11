@@ -1,5 +1,5 @@
 import React from 'react';
-import AdoptionStatusTracker from '../components/AdoptionStatusTracker';
+import AdoptionStatusTracker from '../components/adoption/AdoptionStatusTracker';
 
 const AdoptionStatus = () => {
     return (

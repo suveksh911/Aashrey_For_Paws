@@ -5,9 +5,9 @@ import {
   FaSignOutAlt, FaTachometerAlt, FaPaw, FaHome, FaSearch,
   FaClipboardList, FaUsers, FaHandHoldingHeart, FaBullhorn, FaEnvelope, FaMapMarkerAlt
 } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import NotificationDropdown from "./NotificationDropdown";
-import api from "../services/axios";
+import api from "../../services/axios";
 import "./Navbar.css";
 
 const Navbar = () => {

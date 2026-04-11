@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Shows a static map (read-only) centered on the pet's pinned location
+
 function LocationMap({ lat, lng, locationLabel }) {
     if (!lat || !lng) {
         if (locationLabel) {

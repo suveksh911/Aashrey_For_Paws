@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
-import StarRating from '../components/StarRating';
+import StarRating from '../components/common/StarRating';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
 
