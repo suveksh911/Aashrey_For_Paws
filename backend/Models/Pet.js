@@ -110,22 +110,6 @@ const PetSchema = new Schema({
         type: Boolean,
         default: true
     },
-    vaccinations: {
-        type: [{
-            name: { type: String, default: '' },
-            date: { type: String, default: '' },
-            nextDue: { type: String, default: '' }
-        }],
-        default: []
-    },
-    medicalHistory: {
-        type: [{
-            condition: { type: String, default: '' },
-            date: { type: String, default: '' },
-            notes: { type: String, default: '' }
-        }],
-        default: []
-    },
     createdAt: {
         type: Date,
         default: Date.now

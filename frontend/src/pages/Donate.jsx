@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaHeart, FaPaw, FaRegHeart, FaCheckCircle, FaSpinner, FaArrowLeft, FaShieldAlt } from 'react-icons/fa';
+import { FaHeart, FaPaw, FaRegHeart, FaCheckCircle, FaSpinner, FaArrowLeft, FaShieldAlt, FaGlobe, FaPhoneAlt, FaEnvelope, FaTimes } from 'react-icons/fa';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -9,9 +9,9 @@ const PRESET_AMOUNTS = [500, 1000, 2500, 5000];
 
 // Fallback NGOs if the database is empty or the API fails
 const DEMO_NGOS = [
-    { _id: 'mayakochhaano_5', name: 'Maya ko Chhaano', location: 'Kathmandu', isVerified: true },
-    { _id: 'animalnepal_1', name: 'Animal Nepal', location: 'Nakkhu, Lalitpur', isVerified: true },
-    { _id: 'snehacare_2', name: "Sneha's Care", location: 'Bhaisepati, Lalitpur', isVerified: true },
+    { _id: 'mayakochhaano_5', orgName: 'Maya ko Chhaano', location: 'Kathmandu', isVerified: true, email: 'suve345@gmail.com', phone: '980000004', bio: 'We are dedicated to rescuing and rehoming animals in need.', image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { _id: 'animalnepal_1', orgName: 'Animal Nepal', location: 'Nakkhu, Lalitpur', isVerified: true, phone: '+977-9841111111', bio: 'Improving the welfare of working equines and companion animals through rescue and community education.', image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { _id: 'snehacare_2', orgName: "Sneha's Care", location: 'Bhaisepati, Lalitpur', isVerified: true, phone: '+977-9842424242', bio: 'To provide a safe haven for injured and abandoned animals and promote animal welfare in Nepal.', image: 'https://images.unsplash.com/photo-1593134257782-e89567b7718a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
 ];
 
 export default function Donate() {
@@ -28,18 +28,22 @@ export default function Donate() {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         const fetchNgos = async () => {
             try {
                 const res = await api.get('/admin/ngos/public');
                 const fetchedNgos = res.data.success ? res.data.data : DEMO_NGOS;
-                setNgos(fetchedNgos);
+                setNgos(fetchedNgos.length > 0 ? fetchedNgos : DEMO_NGOS);
                 
                 // Pre-select NGO if ID provided in URL
                 if (initialNgoId) {
-                    const matched = fetchedNgos.find(n => n._id === initialNgoId);
-                    if (matched) setSelectedNgo(matched);
+                    const matched = (fetchedNgos.length > 0 ? fetchedNgos : DEMO_NGOS).find(n => n._id === initialNgoId);
+                    if (matched) {
+                        setSelectedNgo(matched);
+                        setShowModal(true);
+                    }
                 }
             } catch (err) {
                 setNgos(DEMO_NGOS);
@@ -49,6 +53,12 @@ export default function Donate() {
         };
         fetchNgos();
     }, [initialNgoId]);
+
+    const openDonateModal = (ngo) => {
+        setSelectedNgo(ngo);
+        setAmount('');
+        setShowModal(true);
+    };
 
     const handleDonate = async () => {
         if (!isAuthenticated) return toast.info('Please login to make a donation');
@@ -61,7 +71,7 @@ export default function Donate() {
                 amount: Number(amount),
                 purpose: 'Donation',
                 referenceId: selectedNgo._id,
-                itemName: `Donation to ${selectedNgo.name}`,
+                itemName: `Donation to ${selectedNgo.name || selectedNgo.orgName}`,
                 returnUrl: `${window.location.origin}/khalti-callback`
             });
 
@@ -84,121 +94,164 @@ export default function Donate() {
     );
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] py-12 px-4">
-            <div className="max-w-4xl mx-auto">
-                <button onClick={() => navigate(-1)} className="mb-8 flex items-center gap-2 text-[#8D6E63] font-bold hover:gap-3 transition-all">
-                    <FaArrowLeft /> Back
-                </button>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                    {/* Left: Info */}
-                    <div className="space-y-6">
-                        <div className="inline-block p-3 bg-red-50 rounded-2xl">
-                            <FaHeart className="text-red-500 text-2xl" />
-                        </div>
-                        <h1 className="text-4xl font-black text-[#3E2723] leading-tight">
-                            Help us provide a <span className="text-[#8D6E63]">better life</span> for every animal.
-                        </h1>
-                        <p className="text-gray-600 leading-relaxed font-medium">
-                            Your generous contribution directly supports animal welfare organizations in providing food, medical care, and shelter to abandoned pets across Nepal.
-                        </p>
-                        
-                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                            <h3 className="font-bold text-[#5D4037]">Where your money goes:</h3>
-                            <ul className="space-y-3">
-                                {[
-                                    '100% direct transfer to the selected NGO',
-                                    'Critical medical emergencies & vaccinations',
-                                    'Daily nutrition for sheltered animals',
-                                    'Rescue operations and rehabilitation'
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-sm text-gray-500 font-medium">
-                                        <FaCheckCircle className="text-green-500" /> {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-
-                    {/* Right: Form */}
-                    <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-amber-900/5 border border-amber-100">
-                        <h2 className="text-xl font-bold text-[#3E2723] mb-6">Make a Donation</h2>
-                        
-                        <div className="space-y-6">
-                            {/* NGO Selector */}
-                            <div>
-                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Select NGO</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {ngos.map(ngo => (
-                                        <button
-                                            key={ngo._id}
-                                            onClick={() => setSelectedNgo(ngo)}
-                                            className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                                                selectedNgo?._id === ngo._id 
-                                                ? 'border-[#8D6E63] bg-amber-50' 
-                                                : 'border-gray-50 bg-gray-50 hover:border-amber-100'
-                                            }`}
-                                        >
-                                            <div className="text-left">
-                                                <p className={`font-bold text-sm ${selectedNgo?._id === ngo._id ? 'text-[#5D4037]' : 'text-gray-600'}`}>{ngo.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase">{ngo.location}</p>
-                                            </div>
-                                            {selectedNgo?._id === ngo._id && <FaRegHeart className="text-[#8D6E63]" />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Amount Selector */}
-                            <div>
-                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Donation Amount (Rs)</label>
-                                <div className="grid grid-cols-4 gap-2 mb-4">
-                                    {PRESET_AMOUNTS.map(amt => (
-                                        <button
-                                            key={amt}
-                                            onClick={() => setAmount(amt.toString())}
-                                            className={`py-3 rounded-xl text-sm font-black transition-all ${
-                                                amount === amt.toString()
-                                                ? 'bg-[#5D4037] text-white shadow-lg'
-                                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            {amt}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rs.</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Enter custom amount"
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-[#8D6E63] font-bold text-[#3E2723]"
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleDonate}
-                                disabled={submitting}
-                                className="w-full bg-[#5D4037] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#3E2723] transition-all disabled:opacity-50 shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3"
-                            >
-                                {submitting ? (
-                                    <><FaSpinner className="animate-spin" /> Processing...</>
-                                ) : (
-                                    <>Donate Now</>
-                                )}
-                            </button>
-
-                            <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1 font-bold">
-                                <FaShieldAlt /> Secure Khalti Payment Gateway
-                            </p>
-                        </div>
-                    </div>
+        <div className="min-h-screen bg-[#FDFBF7] py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+                <style>{`
+                    .khalti-icon {
+                        display: inline-block;
+                        width: 16px;
+                        height: 12px;
+                        background: #39b5e0;
+                        border-radius: 2px;
+                        position: relative;
+                        margin-right: 6px;
+                        vertical-align: middle;
+                    }
+                    .khalti-icon::before, .khalti-icon::after {
+                        content: '';
+                        position: absolute;
+                        left: 2px;
+                        right: 2px;
+                        height: 2px;
+                        background: white;
+                    }
+                    .khalti-icon::before { top: 3px; }
+                    .khalti-icon::after { bottom: 3px; }
+                `}</style>
+                
+                {/* Hero Section */}
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl md:text-5xl font-black text-[#3E2723] mb-4">
+                        Support Our Verified NGOs
+                    </h1>
+                    <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+                        Your generous contribution directly helps animal welfare organizations rescue, feed, and provide medical care to pets in need.
+                    </p>
                 </div>
+
+                {/* NGOs Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {ngos.map((ngo, idx) => (
+                        <div key={ngo._id || idx} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col hover:shadow-xl transition-shadow">
+                            <div className="h-48 w-full bg-gray-200 relative">
+                                <img 
+                                    src={ngo.profileImage || ngo.image || DEMO_NGOS[idx % DEMO_NGOS.length].image} 
+                                    alt={ngo.orgName || ngo.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            
+                            <div className="p-6 flex flex-col flex-grow">
+                                {ngo.isVerified && (
+                                    <div className="self-start mb-3 bg-[#0088FF] text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                                        <FaShieldAlt size={10} /> Verified NGO
+                                    </div>
+                                )}
+                                
+                                <h3 className="text-lg font-medium text-gray-700 mb-2 font-serif">
+                                    {ngo.orgName || ngo.name || 'NGO'}
+                                </h3>
+                                
+                                <p className="text-sm text-[#8D6E63] mb-6 line-clamp-3">
+                                    {ngo.bio || ngo.description || 'We are dedicated to rescuing and rehoming animals in need and providing a safe haven.'}
+                                </p>
+                                
+                                <div className="space-y-2 mb-6 text-sm text-gray-500 flex-grow">
+                                    <div className="flex items-center gap-2">
+                                        <FaGlobe className="text-gray-400" />
+                                        <span>{ngo.email || ngo.location || 'Kathmandu, Nepal'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <FaPhoneAlt className="text-gray-400" />
+                                        <span>{ngo.phone || '+977-XXXXXXXXXX'}</span>
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => openDonateModal(ngo)}
+                                    className="w-full bg-[#8D6E63] text-white py-3 rounded-lg font-bold hover:bg-[#5D4037] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    <span className="khalti-icon"></span> Donate to Support
+                                </button>
+                                
+                                <div className="mt-4 text-center">
+                                    <a href={ngo.website || '#'} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                                        Visit Website →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Donation Modal */}
+                {showModal && (
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col">
+                            {/* Modal Header */}
+                            <div className="bg-[#5D4037] p-6 text-white text-center relative">
+                                <button 
+                                    onClick={() => setShowModal(false)}
+                                    className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                                >
+                                    <FaTimes size={20} />
+                                </button>
+                                <h2 className="text-2xl font-black mb-1">Make a Donation</h2>
+                                <p className="text-sm opacity-90">Supporting: <span className="font-bold">{selectedNgo?.orgName || selectedNgo?.name}</span></p>
+                            </div>
+                            
+                            {/* Modal Body */}
+                            <div className="p-8 space-y-6">
+                                {/* Amount Selector */}
+                                <div>
+                                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Select Amount (Rs)</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                        {PRESET_AMOUNTS.map(amt => (
+                                            <button
+                                                key={amt}
+                                                onClick={() => setAmount(amt.toString())}
+                                                className={`py-3 rounded-xl text-sm font-black transition-all ${
+                                                    amount === amt.toString()
+                                                    ? 'bg-[#5D4037] text-white shadow-lg scale-105'
+                                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {amt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rs.</span>
+                                        <input
+                                            type="number"
+                                            placeholder="Enter custom amount"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-[#8D6E63] font-bold text-[#3E2723] text-lg text-center"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleDonate}
+                                    disabled={submitting}
+                                    className="w-full bg-[#5D4037] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#3E2723] transition-all disabled:opacity-50 shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3"
+                                >
+                                    {submitting ? (
+                                        <><FaSpinner className="animate-spin" /> Processing...</>
+                                    ) : (
+                                        <><span className="khalti-icon"></span> Donate Now</>
+                                    )}
+                                </button>
+
+                                <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1 font-bold">
+                                    <FaShieldAlt /> Secure Khalti Payment Gateway
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
-

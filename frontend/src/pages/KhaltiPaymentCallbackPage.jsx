@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, Home, History, Gift } from "lucide-react";
 import api from "../services/axios";
@@ -15,6 +15,7 @@ const KhaltiPaymentCallbackPage = () => {
   const [state, setState] = useState("verifying"); // 'verifying' | 'success' | 'failed'
   const [errorMsg, setErrorMsg] = useState("");
   const [paymentData, setPaymentData] = useState(null);
+  const hasVerified = useRef(false);
 
   useEffect(() => {
     const pidx = searchParams.get("pidx");
@@ -31,6 +32,9 @@ const KhaltiPaymentCallbackPage = () => {
       setErrorMsg(`Payment was not completed. Status: ${status}`);
       return;
     }
+
+    if (hasVerified.current) return;
+    hasVerified.current = true;
 
     const verify = async () => {
       try {

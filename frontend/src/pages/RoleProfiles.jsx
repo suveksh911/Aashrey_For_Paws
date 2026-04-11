@@ -17,6 +17,7 @@ const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = fals
     }, [externalEditing]);
 
     const [profileImage, setProfileImage] = useState(null);
+    const [initialData, setInitialData] = useState(null);
     const fileInputRef = useRef(null);
     const [data, setData] = useState({
         orgName: user?.name || 'My NGO',
@@ -40,7 +41,7 @@ const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = fals
                 const res = await api.get('/users/me');
                 if (res.data.success) {
                     const u = res.data.data;
-                    setData({
+                    const fetchedData = {
                         orgName: u.orgName || u.name || 'My NGO',
                         email: u.email || '',
                         phone: u.phone || '',
@@ -53,7 +54,9 @@ const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = fals
                         lng: u.lng || '',
                         ngoStatus: u.ngoStatus || 'pending',
                         isVerified: u.isVerified || false
-                    });
+                    };
+                    setData(fetchedData);
+                    setInitialData(fetchedData);
                     if (u.profileImage) setProfileImage(u.profileImage);
                 }
             } catch {
@@ -80,6 +83,33 @@ const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = fals
     const handleChange = e => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
     const handleSave = async () => {
+        let isUnchanged = false;
+        if (initialData) {
+            isUnchanged = Object.keys(data).every(key => 
+                String(data[key] || '') === String(initialData[key] || '')
+            );
+        } else {
+            isUnchanged = (
+                data.orgName === (user?.orgName || user?.name || 'My NGO') &&
+                data.email === (user?.email || '') &&
+                data.phone === (user?.phone || '') &&
+                data.address === (user?.address || '') &&
+                data.website === (user?.website || '') &&
+                data.registrationNo === (user?.registrationNo || '') &&
+                data.description === (user?.bio || '') &&
+                data.mission === (user?.mission || '') &&
+                String(data.lat || '') === String(user?.lat || '') &&
+                String(data.lng || '') === String(user?.lng || '')
+            );
+        }
+
+        if (isUnchanged) {
+            setIsEditing(false);
+            if (onEditingComplete) onEditingComplete();
+            toast.info('No changes were made');
+            return;
+        }
+
         try {
             await api.patch('/users/me', {
                 name: data.orgName, // Mapping orgName to name for display in other pages
@@ -250,6 +280,7 @@ export const OwnerProfilePage = React.forwardRef(({ isTab = false, externalEditi
         else if (isTab && isEditing && !externalEditing) setIsEditing(false);
     }, [externalEditing, isTab]);
     const [profileImage, setProfileImage] = useState(null);
+    const [initialData, setInitialData] = useState(null);
     const fileInputRef = useRef(null);
     const [data, setData] = useState({
         name: user?.name || '',
@@ -269,7 +300,7 @@ export const OwnerProfilePage = React.forwardRef(({ isTab = false, externalEditi
                 const res = await api.get('/users/me');
                 if (res.data.success) {
                     const u = res.data.data;
-                    setData({
+                    const fetchedData = {
                         name: u.name || '',
                         email: u.email || '',
                         phone: u.phone || '',
@@ -278,7 +309,9 @@ export const OwnerProfilePage = React.forwardRef(({ isTab = false, externalEditi
                         petType: u.petType || '',
                         experience: u.experience || '',
                         isVerified: u.isVerified || false
-                    });
+                    };
+                    setData(fetchedData);
+                    setInitialData(fetchedData);
                     if (u.profileImage) setProfileImage(u.profileImage);
                 }
             } catch {
@@ -290,6 +323,30 @@ export const OwnerProfilePage = React.forwardRef(({ isTab = false, externalEditi
 
     const handleChange = e => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleSave = async () => {
+        let isUnchanged = false;
+        if (initialData) {
+            isUnchanged = Object.keys(data).every(key => 
+                String(data[key] || '') === String(initialData[key] || '')
+            );
+        } else {
+            isUnchanged = (
+                data.name === (user?.name || '') &&
+                data.email === (user?.email || '') &&
+                data.phone === (user?.phone || '') &&
+                data.address === (user?.address || '') &&
+                data.bio === (user?.bio || '') &&
+                data.petType === (user?.petType || '') &&
+                data.experience === (user?.experience || '')
+            );
+        }
+
+        if (isUnchanged) {
+            setIsEditing(false);
+            if (onEditingComplete) onEditingComplete();
+            toast.info('No changes were made');
+            return;
+        }
+
         try {
             await api.patch('/users/me', {
                 name: data.name,

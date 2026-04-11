@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FaHandHoldingHeart, FaSpinner, FaTimes, FaCheckCircle } from 'react-icons/fa';
+import { FaHandHoldingHeart, FaSpinner, FaTimes, FaCheckCircle, FaShieldAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import NGOVerifiedBadge from '../components/ngo/NGOVerifiedBadge';
 import api from '../services/axios';
@@ -12,6 +12,9 @@ function Campaigns() {
     const [error, setError] = useState('');
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
+    const [expandedDesc, setExpandedDesc] = useState({});
+
+    const toggleDesc = (id) => setExpandedDesc(prev => ({...prev, [id]: !prev[id]}));
 
    
     const [donateModal, setDonateModal] = useState(null); 
@@ -160,7 +163,24 @@ function Campaigns() {
                                             <NGOVerifiedBadge isVerified={campaign.isVerified} compact />
                                         </div>
                                     )}
-                                    <p className="desc">{campaign.description || 'Help support this cause.'}</p>
+                                    
+                                    {(() => {
+                                        const text = campaign.description || 'Help support this cause.';
+                                        const isLong = text.length > 130;
+                                        const isExpanded = expandedDesc[campaign._id];
+                                        return (
+                                            <div style={{ marginBottom: '1.5rem' }}>
+                                                <p className="desc" style={{ marginBottom: isLong ? '0.2rem' : '0' }}>
+                                                    {isExpanded || !isLong ? text : text.substring(0, 130) + '...'}
+                                                </p>
+                                                {isLong && (
+                                                    <button onClick={() => toggleDesc(campaign._id)} style={{ background: 'none', border: 'none', color: '#5D4037', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }}>
+                                                        {isExpanded ? 'Show less' : 'Read more'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     <div className="progress-bar-container">
                                         <div className="progress-bar" style={{ width: `${progress}%` }}></div>
@@ -231,46 +251,95 @@ function Campaigns() {
 
             {/* Khalti Donation Modal */}
             {donateModal && !paymentSuccess && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-                    <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', maxWidth: '440px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}>
-                        <button onClick={closeDonateModal} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1.2rem' }}>
-                            <FaTimes />
-                        </button>
-                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💜</div>
-                            <h3 style={{ color: '#3E2723', margin: '0 0 0.3rem' }}>Donate to Campaign</h3>
-                            <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{donateModal.title}</p>
-                            <p style={{ color: '#aaa', fontSize: '0.8rem' }}>by {donateModal.ngoName}</p>
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="bg-[#5D4037] p-6 text-white text-center relative">
+                            <button 
+                                onClick={closeDonateModal}
+                                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                            >
+                                <FaTimes size={20} />
+                            </button>
+                            <h2 className="text-2xl font-black mb-1">Donate to Campaign</h2>
+                            <p className="text-sm opacity-90">Supporting: <span className="font-bold">{donateModal.title}</span></p>
+                            <p className="text-xs opacity-75">by {donateModal.ngoName}</p>
                         </div>
-
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', fontWeight: '600', fontSize: '0.9rem', color: '#555', marginBottom: '0.5rem' }}>Select Amount</label>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
-                                {[100, 250, 500, 1000].map(val => (
-                                    <button key={val} type="button" onClick={() => setDonateAmount(val)}
-                                        style={{ flex: 1, minWidth: '70px', padding: '0.6rem', border: Number(donateAmount) === val ? '2px solid #5C2D91' : '1px solid #ddd', background: Number(donateAmount) === val ? '#f3e8ff' : 'white', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', color: Number(donateAmount) === val ? '#5C2D91' : '#555', transition: 'all 0.2s' }}>
-                                        Rs. {val}
-                                    </button>
-                                ))}
+                        
+                        {/* Modal Body */}
+                        <div className="p-8 space-y-6">
+                            {/* Amount Selector */}
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Select Amount (Rs)</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                    {[100, 250, 500, 1000].map(val => (
+                                        <button
+                                            key={val} 
+                                            type="button" 
+                                            onClick={() => setDonateAmount(val.toString())}
+                                            className={`py-3 rounded-xl text-sm font-black transition-all ${
+                                                Number(donateAmount) === val
+                                                ? 'bg-[#5D4037] text-white shadow-lg scale-105'
+                                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            Rs. {val}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rs.</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter custom amount"
+                                        value={donateAmount}
+                                        onChange={(e) => setDonateAmount(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-[#8D6E63] font-bold text-[#3E2723] text-lg text-center"
+                                    />
+                                </div>
                             </div>
-                            <input
-                                type="number" placeholder="Or enter custom amount..." min="1"
-                                value={donateAmount} onChange={e => setDonateAmount(e.target.value)}
-                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '10px', fontSize: '1rem', boxSizing: 'border-box' }}
-                            />
+                            
+                            <style>{`
+                                .khalti-icon {
+                                    display: inline-block;
+                                    width: 16px;
+                                    height: 12px;
+                                    background: #39b5e0;
+                                    border-radius: 2px;
+                                    position: relative;
+                                    margin-right: 6px;
+                                    vertical-align: middle;
+                                }
+                                .khalti-icon::before, .khalti-icon::after {
+                                    content: '';
+                                    position: absolute;
+                                    left: 2px;
+                                    right: 2px;
+                                    height: 2px;
+                                    background: white;
+                                }
+                                .khalti-icon::before { top: 3px; }
+                                .khalti-icon::after { bottom: 3px; }
+                            `}</style>
+
+                            <button
+                                onClick={handleDonate}
+                                disabled={paying || !donateAmount}
+                                className="w-full bg-[#5D4037] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#3E2723] transition-all disabled:opacity-50 shadow-lg shadow-amber-900/20 flex items-center justify-center gap-3"
+                            >
+                                {paying ? (
+                                    <><FaSpinner className="animate-spin" /> Processing...</>
+                                ) : (
+                                    <><span className="khalti-icon"></span> Pay Rs. {donateAmount || '—'} via Khalti</>
+                                )}
+                            </button>
+
+                            <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1 font-bold">
+                                <FaShieldAlt /> Secure Khalti Payment Gateway
+                            </p>
+
+                            {!user && <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#dc3545', margin: 0, fontWeight: 'bold' }}>⚠️ <Link to="/login" style={{textDecoration: 'underline'}}>Login</Link> required to donate</p>}
                         </div>
-
-                        <div style={{ background: '#f3e8ff', padding: '0.6rem 1rem', borderRadius: '10px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '1.2rem' }}>📱</span>
-                            <span style={{ fontWeight: '700', color: '#5C2D91', fontSize: '0.9rem' }}>Pay with Khalti</span>
-                        </div>
-
-                        <button onClick={handleDonate} disabled={paying || !donateAmount}
-                            style={{ width: '100%', padding: '0.85rem', background: paying ? '#aaa' : '#5C2D91', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '1rem', cursor: paying ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}>
-                            {paying ? '⏳ Processing...' : `💳 Pay Rs. ${donateAmount || '—'} via Khalti`}
-                        </button>
-
-                        {!user && <p style={{ marginTop: '0.75rem', textAlign: 'center', fontSize: '0.85rem', color: '#dc3545' }}>⚠️ <Link to="/login">Login</Link> required to donate</p>}
                     </div>
                 </div>
             )}
@@ -295,7 +364,7 @@ function Campaigns() {
                 .campaign-img img { width: 100%; height: 100%; object-fit: cover; }
                 .campaign-content { padding: 1.5rem; }
                 .campaign-content h3 { margin: 0 0 1rem 0; font-size: 1.2rem; color: #333; }
-                .desc { color: #666; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem; }
+                .desc { color: #666; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0; }
                 .progress-bar-container { background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
                 .progress-bar { background: var(--color-primary); height: 100%; transition: width 0.5s ease; }
                 .fund-stats { display: flex; justify-content: space-between; font-size: 0.9rem; color: #555; margin-bottom: 1.5rem; }

@@ -467,9 +467,12 @@ function PendingPetsTab({ pets, setPets }) {
     };
 
     const reject = async (id) => {
-        if (!window.confirm('Reject and delete this pet listing?')) return;
+        const reason = window.prompt('Please provide a reason for rejecting this pet listing:');
+        if (reason === null) return; // User clicked Cancel
+        if (!reason.trim()) return toast.error('A reason is required to reject a pet listing.');
+
         try {
-            await api.delete(`/pets/${id}/reject`);
+            await api.delete(`/pets/${id}/reject`, { params: { reason } });
             toast.success('Pet listing rejected ❌');
             setPets(pets.filter(p => p._id !== id));
         } catch (err) {
@@ -544,7 +547,25 @@ function PetsTab({ pets, setPets }) {
                                 <td><Badge label={p.status} color={PC[p.status] || '#888'} /></td>
                                 <td style={{ color: '#777', fontSize: '0.85rem' }}>{p.date}</td>
                                 <td>
-                                    <button className="ad-btn-icon red" title="Remove" onClick={() => { if (!window.confirm('Remove this listing?')) return; save(pets.filter(x => x._id !== p._id)); toast.success('Listing removed'); }}><FaTrash /></button>
+                                    <button 
+                                        className="ad-btn-icon red" 
+                                        title="Remove" 
+                                        onClick={async () => { 
+                                            const reason = window.prompt('Please provide a reason for removing this pet listing:');
+                                            if (reason === null) return; // User clicked Cancel
+                                            if (!reason.trim()) return toast.error('A reason is required to remove a pet listing.');
+
+                                            try {
+                                                await api.delete(`/pets/${p._id}`, { params: { reason } });
+                                                save(pets.filter(x => x._id !== p._id)); 
+                                                toast.success('Listing completely removed'); 
+                                            } catch (err) {
+                                                toast.error('Failed to remove listing from server');
+                                            }
+                                        }}
+                                    >
+                                        <FaTrash />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -707,9 +728,11 @@ function AdminNotificationsTab({ notifications, onUpdate }) {
                 </div>
                 {notifications.length > 0 && (
                     <div style={{ display: 'flex', gap: 10 }}>
-                        <button onClick={markAllRead} className="ad-icon-btn" style={{ fontSize: '0.75rem', fontWeight: 700, gap: 6 }}>
-                            Mark all read
-                        </button>
+                        {notifications.some(n => !n.read) && (
+                            <button onClick={markAllRead} className="ad-icon-btn" style={{ fontSize: '0.75rem', fontWeight: 700, gap: 6 }}>
+                                Mark all read
+                            </button>
+                        )}
                         <button onClick={clearAll} className="ad-icon-btn" style={{ fontSize: '0.75rem', fontWeight: 700, gap: 6, color: '#dc2626', borderColor: '#fecaca' }}>
                             <FaTrash size={10} /> Clear all
                         </button>
@@ -810,6 +833,16 @@ function ProfileTab({ user, onUpdate }) {
     });
     const [submitting, setSubmitting] = useState(false);
     const [imagePreview, setImagePreview] = useState(user?.profileImage || '');
+    const [isEditing, setIsEditing] = useState(false);
+    const [showPwForm, setShowPwForm] = useState(false);
+    const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [pwSubmitting, setPwSubmitting] = useState(false);
+
+    const handleCancelEdit = () => {
+        setFormData({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '', profileImage: user?.profileImage || '' });
+        setImagePreview(user?.profileImage || '');
+        setIsEditing(false);
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -825,6 +858,20 @@ function ProfileTab({ user, onUpdate }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Check if any fields actually changed
+        const isUnchanged = (
+            formData.name === (user?.name || '') &&
+            formData.phone === (user?.phone || '') &&
+            formData.profileImage === (user?.profileImage || '')
+        );
+
+        if (isUnchanged) {
+            setIsEditing(false);
+            toast.info('No changes were made');
+            return;
+        }
+
         setSubmitting(true);
         try {
             const res = await api.patch('/users/me', formData);
@@ -836,6 +883,33 @@ function ProfileTab({ user, onUpdate }) {
             toast.error(err.response?.data?.message || 'Failed to update profile');
         } finally {
             setSubmitting(false);
+            setIsEditing(false);
+        }
+    };
+
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        if (pwData.newPassword !== pwData.confirmPassword) {
+            return toast.error('New passwords do not match.');
+        }
+        if (pwData.newPassword.length < 6) {
+            return toast.error('Password must be at least 6 characters.');
+        }
+        setPwSubmitting(true);
+        try {
+            const res = await api.patch('/users/me/password', {
+                currentPassword: pwData.currentPassword,
+                newPassword: pwData.newPassword,
+            });
+            if (res.data.success) {
+                toast.success('Password updated successfully!');
+                setPwData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                setShowPwForm(false);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update password.');
+        } finally {
+            setPwSubmitting(false);
         }
     };
 
@@ -855,22 +929,33 @@ function ProfileTab({ user, onUpdate }) {
                                 (formData.name?.charAt(0).toUpperCase() || 'A')
                             )}
                         </div>
-                        <label className="ad-btn-icon blue" style={{ 
-                            position: 'absolute', bottom: 5, right: 5, background: '#fff', 
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: 8, cursor: 'pointer' 
-                        }}>
-                            <FaCog size={14} />
-                            <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-                        </label>
+                        {isEditing && (
+                            <label className="ad-btn-icon blue" style={{ 
+                                position: 'absolute', bottom: 5, right: 5, background: '#fff', 
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: 8, cursor: 'pointer' 
+                            }}>
+                                <FaCog size={14} />
+                                <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+                            </label>
+                        )}
                     </div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <h2 style={{ margin: 0, fontSize: '1.6rem', color: '#1e293b' }}>{user?.name}</h2>
-                        <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.95rem' }}>Administrator Account</p>
+                        <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.92rem' }}>System Administrator · Aashrey For Paws</p>
                         <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
                             <Badge label="Super Admin" color="#3b82f6" />
-                            <Badge label="Verified" color="#22c55e" />
+                            <Badge label="Full Access" color="#7c3aed" />
                         </div>
                     </div>
+                    {!isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            style={{ alignSelf: 'flex-start', background: '#1e293b', color: '#fff', border: 'none', padding: '9px 20px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            ✏️ Edit Profile
+                        </button>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
@@ -881,6 +966,8 @@ function ProfileTab({ user, onUpdate }) {
                             value={formData.name} 
                             onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
                             placeholder="Enter your full name"
+                            disabled={!isEditing}
+                            style={!isEditing ? { background: '#f8fafc', cursor: 'default' } : {}}
                         />
                     </div>
                     <div style={{ gridColumn: 'span 1' }}>
@@ -891,7 +978,7 @@ function ProfileTab({ user, onUpdate }) {
                             disabled 
                             style={{ background: '#f8fafc', cursor: 'not-allowed' }}
                         />
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, display: 'block' }}>Primary account email (cannot be changed)</span>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, display: 'block' }}>Login email — cannot be changed here</span>
                     </div>
                     <div style={{ gridColumn: 'span 1' }}>
                         <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: 8, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Number</label>
@@ -900,24 +987,110 @@ function ProfileTab({ user, onUpdate }) {
                             value={formData.phone} 
                             onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
                             placeholder="98XXXXXXXX"
+                            disabled={!isEditing}
+                            style={!isEditing ? { background: '#f8fafc', cursor: 'default' } : {}}
                         />
                     </div>
-                    <div style={{ gridColumn: 'span 2', marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '2rem' }}>
-                        <button type="submit" className="ad-save-btn" disabled={submitting} style={{ maxWidth: '200px' }}>
-                            {submitting ? 'Saving Changes...' : 'Update Profile'}
-                        </button>
+                    <div style={{ gridColumn: 'span 1' }}>
+                        <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: 8, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Role</label>
+                        <input 
+                            className="ad-input" 
+                            value="Administrator" 
+                            disabled 
+                            style={{ background: '#f8fafc', cursor: 'not-allowed' }}
+                        />
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, display: 'block' }}>System-assigned role — cannot be changed</span>
                     </div>
+                    {isEditing && (
+                        <div style={{ gridColumn: 'span 2', marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '2rem', display: 'flex', gap: '1rem' }}>
+                            <button type="submit" className="ad-save-btn" disabled={submitting} style={{ maxWidth: '200px' }}>
+                                {submitting ? 'Saving...' : '💾 Save Changes'}
+                            </button>
+                            <button type="button" onClick={handleCancelEdit} style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '9px 20px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                                Cancel
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
             
-            <div className="ad-panel" style={{ marginTop: '1.5rem', borderLeft: '4px solid #f59e0b', background: '#fff9f2' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ color: '#f59e0b', fontSize: '1.5rem' }}>🔐</div>
-                    <div>
-                        <h4 style={{ margin: 0, color: '#92400e' }}>Security Settings</h4>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#b45309' }}>Keep your administrator account secure by using a strong, unique password.</p>
-                    </div>
+            {/* Account Info */}
+            <div className="ad-panel" style={{ marginTop: '1.5rem', padding: '1.5rem' }}>
+                <h4 style={{ margin: '0 0 1rem', color: '#1e293b', fontSize: '0.95rem', fontWeight: 700 }}>🗂️ Account Information</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                    {[
+                        { label: 'Account Status', value: 'Active', color: '#22c55e' },
+                        { label: 'Access Level', value: 'Full Platform Control', color: '#3b82f6' },
+                        { label: 'Account Type', value: 'Internal Admin', color: '#7c3aed' },
+                    ].map(item => (
+                        <div key={item.label} style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem', border: '1px solid #e2e8f0' }}>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>{item.label}</div>
+                            <div style={{ fontWeight: 700, color: item.color, fontSize: '0.9rem' }}>{item.value}</div>
+                        </div>
+                    ))}
                 </div>
+            </div>
+
+            {/* Security */}
+            <div className="ad-panel" style={{ marginTop: '1.5rem', borderLeft: '4px solid #f59e0b', background: '#fffbf0', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ color: '#f59e0b', fontSize: '1.5rem' }}>🔐</div>
+                        <div>
+                            <h4 style={{ margin: 0, color: '#92400e', fontSize: '0.95rem' }}>Password &amp; Security</h4>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#b45309' }}>Use a strong, unique password. Never share your admin credentials with anyone.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowPwForm(v => !v)}
+                        style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                        {showPwForm ? 'Cancel' : 'Change Password'}
+                    </button>
+                </div>
+
+                {showPwForm && (
+                    <form onSubmit={handlePasswordChange} style={{ marginTop: '1.5rem', borderTop: '1px solid #fcd34d', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Password</label>
+                            <input
+                                type="password"
+                                className="ad-input"
+                                value={pwData.currentPassword}
+                                onChange={e => setPwData(p => ({ ...p, currentPassword: e.target.value }))}
+                                placeholder="Enter your current password"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>New Password</label>
+                            <input
+                                type="password"
+                                className="ad-input"
+                                value={pwData.newPassword}
+                                onChange={e => setPwData(p => ({ ...p, newPassword: e.target.value }))}
+                                placeholder="Min. 6 characters"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Confirm New Password</label>
+                            <input
+                                type="password"
+                                className="ad-input"
+                                value={pwData.confirmPassword}
+                                onChange={e => setPwData(p => ({ ...p, confirmPassword: e.target.value }))}
+                                placeholder="Re-enter new password"
+                                required
+                            />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <button type="submit" disabled={pwSubmitting} style={{ background: '#92400e', color: '#fff', border: 'none', padding: '9px 22px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                                {pwSubmitting ? 'Updating...' : '🔒 Update Password'}
+                            </button>
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );
@@ -1162,7 +1335,8 @@ export default function AdminDashboard() {
     const { user, logout, refreshUser } = useAuth();
     const navigate = useNavigate();
     const dropRef = useRef(null);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('ad_active_tab') || 'overview');
+    const changeTab = (tab) => { setActiveTab(tab); localStorage.setItem('ad_active_tab', tab); };
     const [showDrop, setShowDrop] = useState(false);
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
@@ -1255,7 +1429,7 @@ export default function AdminDashboard() {
                 <div className="ad-logo">🐾 <span>Admin Panel</span></div>
                 <nav className="ad-nav">
                     {tabs.filter(t => !['notifications', 'profile'].includes(t.id)).map(t => (
-                        <button key={t.id} className={`ad-nav-btn ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
+                        <button key={t.id} className={`ad-nav-btn ${activeTab === t.id ? 'active' : ''}`} onClick={() => changeTab(t.id)}>
                             <span className="ad-nav-icon">{t.emoji}</span>
                             <span>{t.label}</span>
                             {t.id === 'ngo-verify' && pendingNGO > 0 && <span className="ad-nav-badge">{pendingNGO}</span>}
@@ -1264,13 +1438,7 @@ export default function AdminDashboard() {
                         </button>
                     ))}
 
-                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #334155' }}>
-                        <p style={{ padding: '0 1.2rem', fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Explore Platform</p>
-                        <Link to="/" className="ad-nav-btn" style={{ color: '#f97316' }}>
-                            <span className="ad-nav-icon"><FaGlobe /></span>
-                            <span>Go to Main Site</span>
-                        </Link>
-                    </div>
+
                 </nav>
             </aside>
 
@@ -1281,7 +1449,7 @@ export default function AdminDashboard() {
                     <h1 className="ad-page-title">{tabs.find(t => t.id === activeTab)?.label}</h1>
                     <div className="ad-topbar-right">
                         {/* Bell → notifications */}
-                        <button className="ad-icon-btn" title="Notifications" onClick={() => setActiveTab('notifications')} style={{ position: 'relative' }}>
+                        <button className="ad-icon-btn" title="Notifications" onClick={() => changeTab('notifications')} style={{ position: 'relative' }}>
                             <FaBell />
                             {summary.unreadNotifs > 0 && <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', fontSize: '10px', width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontWeight: 'bold', border: '2px solid #fff' }}>{summary.unreadNotifs}</span>}
                         </button>
@@ -1302,11 +1470,8 @@ export default function AdminDashboard() {
                                             <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Administrator</div>
                                         </div>
                                     </div>
-                                    <button className="ad-drop-item" onClick={() => { setActiveTab('profile'); setShowDrop(false); }}>
+                                    <button className="ad-drop-item" onClick={() => { changeTab('profile'); setShowDrop(false); }}>
                                         <FaUserCircle size={14} /> My Profile
-                                    </button>
-                                    <button className="ad-drop-item" onClick={() => { setActiveTab('notifications'); setShowDrop(false); }}>
-                                        <FaBell size={14} /> Notifications {summary.unreadNotifs > 0 && <span style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', padding: '0 6px', borderRadius: '10px', fontSize: '10px' }}>{summary.unreadNotifs}</span>}
                                     </button>
                                     <div style={{ height: 1, background: '#f0e8e5', margin: '2px 0' }} />
                                     <button className="ad-drop-item ad-drop-danger" onClick={handleLogout}>

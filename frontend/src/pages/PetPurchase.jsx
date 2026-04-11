@@ -133,17 +133,39 @@ export default function PetPurchase() {
                     ))}
                 </div>
 
+                <style>{`
+                    .khalti-icon {
+                        display: inline-block;
+                        width: 16px;
+                        height: 12px;
+                        background: #39b5e0;
+                        border-radius: 2px;
+                        position: relative;
+                        margin-right: 6px;
+                        vertical-align: middle;
+                    }
+                    .khalti-icon::before, .khalti-icon::after {
+                        content: '';
+                        position: absolute;
+                        left: 2px;
+                        right: 2px;
+                        height: 2px;
+                        background: white;
+                    }
+                    .khalti-icon::before { top: 3px; }
+                    .khalti-icon::after { bottom: 3px; }
+                `}</style>
                 {/* Pay button */}
                 <button
                     onClick={handleKhaltiPay}
                     disabled={paying}
-                    className="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-purple-700 transition-colors disabled:opacity-60 shadow-lg"
+                    className="w-full bg-[#5D4037] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#3E2723] transition-colors disabled:opacity-60 shadow-lg shadow-amber-900/20"
                 >
                     {paying ? (
                         <>Processing…</>
                     ) : (
                         <>
-                            <img src="https://web.khalti.com/static/img/logo.png" alt="Khalti" className="h-5 object-contain filter brightness-0 invert" onError={e => e.target.style.display = 'none'} />
+                            <span className="khalti-icon"></span>
                             Pay Rs. {(pet.price || 0).toLocaleString()} with Khalti
                         </>
                     )}

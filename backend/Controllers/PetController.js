@@ -61,7 +61,7 @@ const getAllPets = async (req, res) => {
 
         res.status(200).json({ success: true, data });
     } catch (err) {
-        res.status(500).json({ success: false, message: "Failed to fetch pets" });
+        res.status(500).json({ success: false, message: "Could not load pet listings" });
     }
 }
 
@@ -86,6 +86,8 @@ const getPetById = async (req, res) => {
             }
         }
 
+        const records = await HealthRecordModel.find({ petId: id }).sort({ date: -1 });
+        
         const data = {
             ...pet.toObject(),
             ngoVerified: pet.ownerId && pet.ownerId.ngoStatus === 'verified',
@@ -97,7 +99,19 @@ const getPetById = async (req, res) => {
                 phone: pet.ownerId.phone,
                 avgRating,
                 reviewCount
-            } : null
+            } : null,
+            // Merge health records back into the response for consistency
+            vaccinations: records.filter(r => r.recordType === 'Vaccination').map(v => ({
+                id: v._id,
+                name: v.description, // Mapped to name for frontend legacy support
+                date: v.date,
+                nextDue: v.nextDueDate
+            })),
+            medicalHistory: records.filter(r => r.recordType !== 'Vaccination').map(m => ({
+                id: m._id,
+                condition: m.description, // Mapped to condition
+                date: m.date
+            }))
         };
 
         res.status(200).json({ success: true, data });
@@ -125,8 +139,10 @@ const createPet = async (req, res) => {
             );
         }
 
+        const { vaccinations, medicalHistory, ...petData } = body;
+
         const newPet = new PetModel({
-            ...body,
+            ...petData,
             images: processedImages,
             image: processedImages[0] || body.image,
             ownerId: req.user._id,
@@ -135,7 +151,28 @@ const createPet = async (req, res) => {
         });
         await newPet.save();
 
-       
+        // Save Health Records if provided
+        if (vaccinations && vaccinations.length > 0) {
+            const records = vaccinations.map(v => ({
+                petId: newPet._id,
+                recordType: 'Vaccination',
+                date: v.date || new Date().toISOString().split('T')[0],
+                description: v.name || 'Vaccination Entry',
+                nextDueDate: v.nextDue || ''
+            }));
+            await HealthRecordModel.insertMany(records);
+        }
+
+        if (medicalHistory && medicalHistory.length > 0) {
+            const records = medicalHistory.map(m => ({
+                petId: newPet._id,
+                recordType: 'Treatment',
+                date: m.date || new Date().toISOString().split('T')[0],
+                description: m.condition + (m.notes ? `: ${m.notes}` : '') || 'Medical History Entry'
+            }));
+            await HealthRecordModel.insertMany(records);
+        }
+
         await createNotification(
             req.user._id,
             'success',
@@ -145,8 +182,8 @@ const createPet = async (req, res) => {
 
         res.status(201).json({ success: true, message: "Pet added successfully", data: newPet });
     } catch (err) {
-        console.error('createPet error:', err.message, err.errors || '');
-        res.status(500).json({ success: false, message: err.message || "Failed to create pet record" });
+        console.log('Error creating pet:', err.message);
+        res.status(500).json({ success: false, message: "Something went wrong while saving the pet record" });
     }
 }
 
@@ -171,7 +208,7 @@ const updatePet = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized to update this pet' });
         }
 
-        const { name, breed, age, gender, location, description, status, adoptionStatus, healthStatus, images, image, type, category, price, paymentDetails, vaccinations, medicalHistory } = req.body;
+        const { name, breed, age, gender, location, description, status, adoptionStatus, healthStatus, images, image, type, category, price, paymentDetails, vaccinations, medicalHistory, quantity } = req.body;
         const updates = {};
         if (name) updates.name = name;
         if (breed) updates.breed = breed;
@@ -185,9 +222,7 @@ const updatePet = async (req, res) => {
         if (category) updates.category = category;
         if (price !== undefined) updates.price = price;
         if (paymentDetails !== undefined) updates.paymentDetails = paymentDetails;
-        if (vaccinations !== undefined) updates.vaccinations = vaccinations;
-        if (medicalHistory !== undefined) updates.medicalHistory = medicalHistory;
-    if (req.body.quantity !== undefined) updates.quantity = req.body.quantity;
+        if (quantity !== undefined) updates.quantity = quantity;
 
         if (images) {
             updates.images = await Promise.all(
@@ -202,7 +237,39 @@ const updatePet = async (req, res) => {
 
         const updated = await PetModel.findByIdAndUpdate(id, updates, { new: true });
 
-        
+        // Handle Health Records sync if provided
+        if (vaccinations !== undefined || medicalHistory !== undefined) {
+            // Delete existing records to sync state
+            await HealthRecordModel.deleteMany({ petId: id });
+
+            const newRecords = [];
+            if (vaccinations && Array.isArray(vaccinations)) {
+                vaccinations.forEach(v => {
+                    newRecords.push({
+                        petId: id,
+                        recordType: 'Vaccination',
+                        date: v.date || new Date().toISOString().split('T')[0],
+                        description: v.name || 'Vaccination Entry',
+                        nextDueDate: v.nextDue || ''
+                    });
+                });
+            }
+            if (medicalHistory && Array.isArray(medicalHistory)) {
+                medicalHistory.forEach(m => {
+                    newRecords.push({
+                        petId: id,
+                        recordType: 'Treatment',
+                        date: m.date || new Date().toISOString().split('T')[0],
+                        description: m.condition + (m.notes ? `: ${m.notes}` : '') || 'Medical History Entry'
+                    });
+                });
+            }
+
+            if (newRecords.length > 0) {
+                await HealthRecordModel.insertMany(newRecords);
+            }
+        }
+
         await createNotification(
             req.user._id,
             'info',
@@ -212,7 +279,8 @@ const updatePet = async (req, res) => {
 
         res.status(200).json({ success: true, message: 'Pet updated', data: updated });
     } catch (err) {
-        res.status(500).json({ success: false, message: 'Failed to update pet' });
+        console.log('Update error:', err);
+        res.status(500).json({ success: false, message: 'There was a problem updating the pet details' });
     }
 }
 
@@ -221,13 +289,27 @@ const deletePet = async (req, res) => {
         const { id } = req.params;
         const pet = await PetModel.findById(id);
         if (!pet) return res.status(404).json({ success: false, message: 'Pet not found' });
-        if (pet.ownerId.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+        
+        const isAdmin = req.user.role === 'Admin';
+        if (pet.ownerId.toString() !== req.user._id.toString() && !isAdmin) {
             return res.status(403).json({ success: false, message: 'Not authorized to delete this pet' });
         }
+        
+        const reason = req.body.reason || req.query.reason;
+        
         await PetModel.findByIdAndDelete(id);
+        
+        // Notify user if Admin is deleting their pet
+        if (isAdmin && pet.ownerId.toString() !== req.user._id.toString()) {
+            const message = reason
+                ? `⚠️ Your pet listing for "${pet.name}" was removed by an Administrator. Reason: ${reason}`
+                : `⚠️ Your pet listing for "${pet.name}" was removed by an Administrator.`;
+            await createNotification(pet.ownerId, 'alert', message, '#');
+        }
+
         res.status(200).json({ success: true, message: "Pet removed successfully" });
     } catch (err) {
-        res.status(500).json({ success: false, message: "Failed to delete pet" });
+        res.status(500).json({ success: false, message: "Error deleting the pet" });
     }
 }
 
@@ -257,10 +339,17 @@ const approvePet = async (req, res) => {
 const rejectPet = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || req.query.reason;
         const pet = await PetModel.findByIdAndDelete(id);
         
-        // Log for admin
         if (pet) {
+            // Notify the user who posted the pet
+            const message = reason 
+                ? `❌ Your pending pet listing for "${pet.name}" was rejected. Reason: ${reason}`
+                : `❌ Your pending pet listing for "${pet.name}" was rejected.`;
+            await createNotification(pet.ownerId, 'alert', message, '#');
+            
+            // Log for admin
             await createNotification(req.user._id, 'alert', `Pet Listing Rejected: ${pet.name}`);
         }
 

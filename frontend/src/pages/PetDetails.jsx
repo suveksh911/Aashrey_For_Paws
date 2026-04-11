@@ -11,7 +11,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default marker icons in Leaflet
+// leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -88,8 +88,7 @@ function PetDetails() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [showContact, setShowContact] = useState(false);
 
-    // Check if pet is already a favorite on load
-    useEffect(() => {
+        // favorites check
         const favoriteKey = user ? `userFavorites_${user._id}` : 'userFavorites_guest';
         const savedFavorites = JSON.parse(localStorage.getItem(favoriteKey)) || [];
         setIsFavorite(savedFavorites.some(p => p._id === id));
@@ -174,6 +173,19 @@ function PetDetails() {
 
     return (
         <div className="container" style={{ padding: '2rem' }}>
+            {/* Back Button */}
+            <button 
+                onClick={() => navigate(-1)}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'none', border: 'none', color: '#5D4037',
+                    fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                    marginBottom: '1rem', padding: '0',
+                    marginTop: '-1rem'
+                }}
+            >
+                <FaChevronLeft /> Back
+            </button>
             <div className="pet-details-card">
                 <div className="pet-image-section">
                     <div className="pet-image-main">
@@ -188,9 +200,9 @@ function PetDetails() {
                             </>
                         )}
                         <img 
-                            src={activeImage || 'https://via.placeholder.com/600x400?text=No+Image'} 
+                            src={activeImage || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
                             alt={pet.name} 
-                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x400?text=No+Image'; }}
+                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'; }}
                         />
                     </div>
                     {pet.images && pet.images.length > 1 && (
@@ -245,7 +257,6 @@ function PetDetails() {
                         </div>
                     </div>
 
-                    {/* Personality tags */}
                     {pet.personalities && pet.personalities.length > 0 && (
                         <div style={{ marginBottom: '1.25rem' }}>
                             <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '6px' }}>🐾 Personality</strong>
@@ -257,7 +268,6 @@ function PetDetails() {
                         </div>
                     )}
 
-                    {/* Posted By card */}
                     {pet.postedBy && (() => {
                         const cfg = POSTER_CONFIG[pet.postedBy.type] || POSTER_CONFIG.Owner;
                         const isNGO = pet.postedBy.type === 'NGO';
@@ -298,7 +308,6 @@ function PetDetails() {
                                     </button>
                                 </div>
 
-                                {/* Contact Info Dropdown */}
                                 {showContact && (
                                     <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px', animation: 'fadeIn 0.2s ease' }}>
                                         {pet.postedBy.email && (
@@ -329,7 +338,6 @@ function PetDetails() {
                         );
                     })()}
 
-                    {/* Urgent notice */}
                     {pet.urgent && (
                         <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontSize: '0.88rem', fontWeight: 600 }}>
                             <FaExclamationTriangle color="#f59e0b" /> Urgent adoption needed — this pet needs a home as soon as possible!
@@ -423,85 +431,89 @@ function PetDetails() {
                     background: #fff;
                     display: flex;
                     flex-direction: column;
-                    padding: 1.5rem;
+                    padding: 0;
                     border-right: 1px solid #f3f4f6;
                 }
                 .pet-image-main {
-                    aspect-ratio: 4/3;
+                    aspect-ratio: 1 / 1;
                     width: 100%;
-                    border-radius: 12px;
                     overflow: hidden;
                     background: #f9fafb;
-                    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-                    margin-bottom: 1rem;
                     position: relative;
+                }
+                @media (min-width: 992px) {
+                    .pet-image-main {
+                        aspect-ratio: unset;
+                        height: 100%;
+                    }
                 }
                 .nav-btn {
                     position: absolute;
                     top: 50%;
                     transform: translateY(-50%);
-                    background: rgba(255, 255, 255, 0.15);
-                    backdrop-filter: blur(4px);
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    color: white;
-                    width: 40px;
-                    height: 40px;
+                    background: rgba(255, 255, 255, 0.3);
+                    backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    color: #5D4037;
+                    width: 44px;
+                    height: 44px;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     z-index: 5;
-                    transition: all 0.2s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     opacity: 0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 }
                 .pet-image-main:hover .nav-btn {
                     opacity: 1;
                 }
                 .nav-btn:hover {
-                    background: rgba(255, 255, 255, 0.4);
+                    background: rgba(255, 255, 255, 0.8);
+                    color: #000;
                     transform: translateY(-50%) scale(1.1);
                 }
-                .nav-btn.prev { left: 15px; }
-                .nav-btn.next { right: 15px; }
+                .nav-btn.prev { left: 20px; }
+                .nav-btn.next { right: 20px; }
                 
                 .pet-image-main img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                    object-position: center;
                 }
                 .pet-image-gallery {
                     display: flex;
-                    gap: 10px;
+                    gap: 12px;
+                    padding: 1rem;
+                    background: #fff;
                     overflow-x: auto;
-                    padding: 4px 2px 8px;
-                    scrollbar-width: thin;
-                    scrollbar-color: #e5e7eb transparent;
+                    scrollbar-width: none;
                 }
-                .pet-image-gallery::-webkit-scrollbar { height: 4px; }
-                .pet-image-gallery::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 4px; }
+                .pet-image-gallery::-webkit-scrollbar { display: none; }
                 
                 .gallery-thumb {
                     flex-shrink: 0;
-                    width: 70px;
-                    height: 70px;
-                    border-radius: 10px;
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 12px;
                     overflow: hidden;
                     cursor: pointer;
-                    border: 2px solid transparent;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    border: 2px solid #f3f4f6;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
                 }
                 .gallery-thumb:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    border-color: #8D6E6350;
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+                    border-color: #8D6E6340;
                 }
                 .gallery-thumb.active {
                     border-color: #8D6E63;
-                    transform: scale(0.95);
-                    box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.15);
+                    transform: scale(0.92);
+                    box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
                 }
                 .gallery-thumb img {
                     width: 100%;

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
 import MultiImageUpload from '../components/pet/MultiImageUpload';
-import PetHealthRecords from '../components/pet/PetHealthRecords';
+import PetHealthForm from '../components/pet/PetHealthForm';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -173,8 +173,11 @@ function AddPet() {
             <div className="max-w-2xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-[#8D6E63] to-[#5D4037] px-6 py-5 text-white">
-                        <h1 className="text-2xl font-bold">Add a New Pet</h1>
+                    <div className="bg-gradient-to-r from-[#8D6E63] to-[#5D4037] px-6 py-5 text-white relative">
+                        <button onClick={() => navigate(-1)} className="absolute left-6 top-6 text-white hover:text-amber-200 transition-colors flex items-center gap-2 text-sm font-semibold">
+                           &larr; Back
+                        </button>
+                        <h1 className="text-2xl font-bold mt-4">Add a New Pet</h1>
                         <p className="text-amber-100 text-sm mt-1">Fill in the details to create your pet listing</p>
                     </div>
 
@@ -361,7 +364,7 @@ function AddPet() {
 
                         {/* Health Records */}
                         <div className="border-t border-gray-100 pt-6">
-                            <PetHealthRecords 
+                            <PetHealthForm 
                                 pet={petInfo} 
                                 isEditable={true} 
                                 onUpdate={handleHealthUpdate} 

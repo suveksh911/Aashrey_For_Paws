@@ -31,6 +31,7 @@ const AdopterProfile = React.forwardRef(({ isTab = false, externalEditing = fals
         else if (isTab && isEditing && !externalEditing) setIsEditing(false);
     }, [externalEditing, isTab]);
     const [profileImage, setProfileImage] = useState(null);
+    const [initialData, setInitialData] = useState(null);
     const fileInputRef = useRef(null);
     const [profileData, setProfileData] = useState({
         name: user?.name || 'User',
@@ -56,13 +57,15 @@ const AdopterProfile = React.forwardRef(({ isTab = false, externalEditing = fals
             const res = await api.get('/users/me');
             if (res.data.success) {
                 const u = res.data.data;
-                setProfileData({
+                const fetchedData = {
                     name: u.name || '',
                     email: u.email || '',
                     phone: u.phone || '',
                     address: u.address || '',
                     bio: u.bio || ''
-                });
+                };
+                setProfileData(fetchedData);
+                setInitialData(fetchedData);
                 if (u.profileImage) setProfileImage(u.profileImage);
             }
         } catch {
@@ -112,6 +115,28 @@ const AdopterProfile = React.forwardRef(({ isTab = false, externalEditing = fals
     };
 
     const handleSave = async () => {
+        let isUnchanged = false;
+        if (initialData) {
+            isUnchanged = Object.keys(profileData).every(key => 
+                String(profileData[key] || '') === String(initialData[key] || '')
+            );
+        } else {
+            isUnchanged = (
+                profileData.name === (user?.name || '') &&
+                profileData.email === (user?.email || '') &&
+                profileData.phone === (user?.phone || '') &&
+                profileData.address === (user?.address || '') &&
+                profileData.bio === (user?.bio || '')
+            );
+        }
+
+        if (isUnchanged) {
+            setIsEditing(false);
+            if (onEditingComplete) onEditingComplete();
+            toast.info('No changes were made');
+            return;
+        }
+
         try {
             await api.patch('/users/me', {
                 name: profileData.name,
@@ -275,7 +300,7 @@ const AdopterProfile = React.forwardRef(({ isTab = false, externalEditing = fals
                         <div className="up-favs-grid">
                             {favorites.slice(0, 4).map(pet => (
                                 <Link key={pet._id} to={`/pet/${pet._id}`} className="up-fav-card">
-                                    <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/140x100?text=Pet'} alt={pet.name} />
+                                    <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} alt={pet.name} />
                                     <div className="up-fav-info">
                                         <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{pet.name}</div>
                                         <div style={{ color: '#888', fontSize: '0.78rem' }}>{pet.breed}</div>

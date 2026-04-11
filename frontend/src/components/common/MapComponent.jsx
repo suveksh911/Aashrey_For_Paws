@@ -43,7 +43,7 @@ const MapComponent = ({ pets = [] }) => {
                             <div className="map-popup-card" style={{ width: '200px' }}>
                                 <div className="popup-img" style={{ marginBottom: '8px' }}>
                                     <img 
-                                        src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image'} 
+                                        src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
                                         alt={pet.name} 
                                         style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px' }} 
                                     />

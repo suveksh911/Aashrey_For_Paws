@@ -100,9 +100,20 @@ function Community() {
     };
 
     const handleEditCommentSave = async (postId, commentId) => {
-        if (!editingCommentText.trim()) return;
+        const trimmedText = editingCommentText.trim();
+        if (!trimmedText) return;
+
+        const post = posts.find(p => p._id === postId);
+        const commentToEdit = post?.comments.find(c => c._id === commentId);
+
+        if (commentToEdit && commentToEdit.text === trimmedText) {
+            setEditingCommentId(null);
+            setEditingCommentText('');
+            return;
+        }
+
         try {
-            const res = await api.put(`/posts/${postId}/comment/${commentId}`, { text: editingCommentText });
+            const res = await api.put(`/posts/${postId}/comment/${commentId}`, { text: trimmedText });
             if (res.data.success) {
                 setPosts(prev => prev.map(p =>
                     p._id === postId ? { ...p, comments: p.comments.map(c => c._id === commentId ? { ...c, text: res.data.data.text } : c) } : p

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     FaGlobe, FaPhone, FaMapMarkerAlt, FaEnvelope, FaPen,
     FaStar, FaCheckCircle, FaPaw, FaUserCircle, FaBuilding,
-    FaIdCard, FaCalendarAlt, FaHeart, FaShieldAlt
+    FaIdCard, FaCalendarAlt, FaHeart, FaShieldAlt, FaArrowLeft
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import api from '../services/axios';
 const NGODetails = () => {
     const { id } = useParams();
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const [profile, setProfile] = useState(null);
     const [pets, setPets] = useState([]);
@@ -104,6 +105,22 @@ const NGODetails = () => {
     return (
         <div style={{ minHeight: '100vh', background: '#f8fafc', paddingTop: '2rem', paddingBottom: '3rem' }}>
             <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1rem' }}>
+
+                {/* Back Button */}
+                <button 
+                    onClick={() => navigate(-1)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'none', border: 'none', color: '#5D4037',
+                        fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                        marginBottom: '1.2rem', padding: '0.5rem 0',
+                        opacity: 0.9, transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}
+                >
+                    <FaArrowLeft /> Back
+                </button>
 
                 {/* ── Hero Card ── */}
                 <div style={{ background: '#fff', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f0f0f0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
@@ -316,7 +333,7 @@ const NGODetails = () => {
                                                 onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                                 <img
-                                                    src={p.image || p.images?.[0] || 'https://via.placeholder.com/80x80?text=Pet'}
+                                                    src={p.image || p.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'}
                                                     alt={p.name}
                                                     style={{ width: '44px', height: '44px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
                                                 />

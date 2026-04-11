@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import PetHealthRecords from '../components/pet/PetHealthRecords';
+import PetHealthForm from '../components/pet/PetHealthForm';
 import MultiImageUpload from '../components/pet//MultiImageUpload';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +11,7 @@ function EditPet() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [originalData, setOriginalData] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         type: 'Dog',
@@ -33,7 +34,7 @@ function EditPet() {
             const response = await api.get(`/pets/${id}`);
             if (response.data.success) {
                 const pet = response.data.data;
-                setFormData({
+                const petData = {
                     name: pet.name,
                     type: pet.type || pet.category || 'Dog',
                     breed: pet.breed,
@@ -47,7 +48,9 @@ function EditPet() {
                     quantity: pet.quantity || 1,
                     vaccinations: pet.vaccinations || [],
                     medicalHistory: pet.medicalHistory || []
-                });
+                };
+                setFormData(petData);
+                setOriginalData(JSON.stringify(petData));
             } else {
                 toast.error('Pet not found');
             }
@@ -89,6 +92,14 @@ function EditPet() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Dirty check
+        if (originalData === JSON.stringify(formData)) {
+            toast.info('No changes were made to the pet');
+            redirectAfterSave();
+            return;
+        }
+
         try {
             const response = await api.put(`/pets/${id}`, formData);
             if (response.data.success) {
@@ -104,6 +115,19 @@ function EditPet() {
 
     return (
         <div className="container" style={{ padding: '2rem', maxWidth: '800px' }}>
+            {/* Back Button */}
+            <button 
+                onClick={() => navigate(-1)}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'none', border: 'none', color: '#5D4037',
+                    fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                    marginBottom: '1rem', padding: '0',
+                    marginTop: '-1rem'
+                }}
+            >
+                &larr; Back
+            </button>
             <h1>Edit Pet Details</h1>
             <form onSubmit={handleSubmit} className="edit-pet-form">
                 <div className="form-group">
@@ -174,13 +198,11 @@ function EditPet() {
                 </div>
 
                 <div style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-
-                    <PetHealthRecords
+                    <PetHealthForm
                         pet={formData}
                         isEditable={true}
                         onUpdate={(field, updatedData) => setFormData(prev => ({ ...prev, [field]: updatedData }))}
                     />
-
                 </div>
 
                 <div className="form-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>

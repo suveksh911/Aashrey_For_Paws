@@ -1,73 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import React, { useRef, useState } from 'react';
+import { FaCloudUploadAlt, FaTimes } from 'react-icons/fa';
 
-// Fix for default marker icons in Leaflet with React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+const MultiImageUpload = ({ onImagesChange, maxImages = 5 }) => {
+    const fileInputRef = useRef(null);
+    const [previewUrls, setPreviewUrls] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
 
-const center = [27.7172, 85.3240]; // Kathmandu Latitude & Longitude
-
-const MapComponent = ({ pets = [] }) => {
-    const [markers, setMarkers] = useState([]);
-
-    useEffect(() => {
-        // Assign random offsets around Kathmandu for pets without strict coordinates
-        if (pets.length > 0) {
-            const processedMarkers = pets.map((pet) => {
-                const lat = pet.lat || (27.7172 + (Math.random() - 0.5) * 0.1);
-                const lng = pet.lng || (85.3240 + (Math.random() - 0.5) * 0.1);
-                return { ...pet, lat, lng };
-            });
-            setMarkers(processedMarkers);
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        
+        // Combine with existing files and enforce max image limit
+        const combinedFiles = [...selectedFiles, ...files].slice(0, maxImages);
+        setSelectedFiles(combinedFiles);
+        
+        // Generate preview URLs
+        const urls = combinedFiles.map(file => URL.createObjectURL(file));
+        setPreviewUrls(urls);
+        
+        if (onImagesChange) {
+            onImagesChange(combinedFiles);
         }
-    }, [pets]);
+    };
+
+    const removeImage = (index) => {
+        const newFiles = [...selectedFiles];
+        newFiles.splice(index, 1);
+        setSelectedFiles(newFiles);
+        
+        const newUrls = [...previewUrls];
+        URL.revokeObjectURL(newUrls[index]);
+        newUrls.splice(index, 1);
+        setPreviewUrls(newUrls);
+        
+        if (onImagesChange) {
+            onImagesChange(newFiles);
+        }
+    };
 
     return (
-        <div style={{ width: '100%', height: '500px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ddd' }}>
-            <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                
-                {markers.map(pet => (
-                    <Marker key={pet._id || pet.id} position={[pet.lat, pet.lng]}>
-                        <Popup>
-                            <div className="map-popup-card" style={{ width: '200px' }}>
-                                <div className="popup-img" style={{ marginBottom: '8px' }}>
-                                    <img 
-                                        src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image'} 
-                                        alt={pet.name} 
-                                        style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px' }} 
-                                    />
-                                </div>
-                                <div className="popup-info">
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#5d4037' }}>{pet.name}</h4>
-                                    <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#666' }}>{pet.breed}</p>
-                                    <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', fontWeight: 'bold', color: pet.adoptionStatus === 'Available' ? 'green' : 'red' }}>
-                                        {pet.adoptionStatus}
-                                    </p>
-                                    <Link 
-                                        to={`/pet/${pet._id}`} 
-                                        style={{ display: 'block', background: '#5d4037', color: 'white', textAlign: 'center', padding: '6px', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem' }}
-                                    >
-                                        View Profile
-                                    </Link>
-                                </div>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-            </MapContainer>
+        <div style={{ padding: '1.5rem', border: '2px dashed #d6d3d1', borderRadius: '12px', textAlign: 'center', background: '#fafaf9', transition: 'all 0.2s', cursor: 'pointer' }} onClick={() => fileInputRef.current?.click()} className="hover:border-[#8D6E63] hover:bg-[#f5f5f4]">
+            <input 
+                type="file" 
+                multiple 
+                accept="image/*" 
+                onChange={handleFileChange} 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+            />
+            
+            <div style={{ padding: '1rem' }}>
+                <FaCloudUploadAlt size={45} color="#8D6E63" style={{ margin: '0 auto' }} />
+                <p style={{ marginTop: '0.75rem', fontWeight: 'bold', color: '#5D4037', fontSize: '1.05rem', margin: '10px 0 2px' }}>
+                    Click to browse files
+                </p>
+                <p style={{ fontSize: '0.85rem', color: '#78716c', margin: 0 }}>
+                    Max {maxImages} images (JPEG, PNG, WEBP)
+                </p>
+            </div>
+
+            {previewUrls.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '1.5rem', justifyContent: 'center', backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e7e5e4' }} onClick={(e) => e.stopPropagation()}>
+                    {previewUrls.map((url, i) => (
+                        <div key={i} style={{ position: 'relative', width: '85px', height: '85px' }}>
+                            <img 
+                                src={url} 
+                                alt={`preview-${i}`} 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e7e5e4' }} 
+                            />
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                                style={{
+                                    position: 'absolute', top: '-6px', right: '-6px',
+                                    background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%',
+                                    width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', padding: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                }}
+                            >
+                                <FaTimes size={12} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
 
-export default React.memo(MapComponent);
+export default MultiImageUpload;

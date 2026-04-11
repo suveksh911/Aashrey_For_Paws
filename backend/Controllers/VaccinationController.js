@@ -179,14 +179,36 @@ const checkAndNotify = async (req, res) => {
 const editVaccination = async (req, res) => {
     try {
         const { id } = req.params;
+        const updateData = { ...req.body, isNotified: false };
+        
+        // Prevent CastError if petId is an empty string
+        if (updateData.petId === '') {
+            updateData.petId = null;
+        }
+
+        // Map executionDate to nextVaccinationDate, similar to add
+        if (updateData.executionDate || updateData.vaccinationDate) {
+            const vacDate = updateData.vaccinationDate ? new Date(updateData.vaccinationDate) : undefined;
+            const execDate = updateData.executionDate ? new Date(updateData.executionDate) : undefined;
+            
+            if (execDate) {
+                updateData.nextVaccinationDate = execDate;
+            } else if (vacDate && updateData.vaccineName) {
+                updateData.nextVaccinationDate = vaccinationService.calculateNextDueDate(vacDate, updateData.vaccineName);
+            }
+            
+            delete updateData.executionDate;
+        }
+
         const updated = await VaccinationModel.findOneAndUpdate(
             { _id: id, userId: req.user._id },
-            { $set: { ...req.body, isNotified: false } },
+            { $set: updateData },
             { new: true }
         );
         if (!updated) return res.status(404).json({ success: false, message: "Record not found" });
         res.status(200).json({ success: true, data: updated });
     } catch (err) {
+        console.error('editVaccination Error:', err);
         res.status(500).json({ success: false, message: "Update failed" });
     }
 };

@@ -202,7 +202,7 @@ const Overview = ({ petCount, reportCount, requestCount, campaignCount, approved
                             {latestPets.slice(0, 3).map(pet => (
                                 <div key={pet._id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500 p-2">
                                     <div className="relative h-28 rounded-xl overflow-hidden mb-3">
-                                        <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute top-2 right-2"><StatusPill status={pet.status} /></div>
                                     </div>
                                     <h4 className="font-bold text-[#3E2723] text-sm px-1 truncate">{pet.name}</h4>
@@ -294,7 +294,7 @@ const MyPets = ({ pets, loading, onDelete }) => {
                         <div key={pet._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
                             <div className="relative h-44 bg-gray-100">
                                 <img
-                                    src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                    src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'}
                                     alt={pet.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -363,7 +363,7 @@ const LostFoundReports = ({ pets, loading, onDelete }) => {
                         <div key={pet._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
                             <div className="relative h-44 bg-gray-100">
                                 <img
-                                    src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                    src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'}
                                     alt={pet.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -1343,7 +1343,7 @@ export default function NGODashboard() {
                                         <div key={pet._id} className="group bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-[#5D4037]/5 transition-all duration-500">
                                             <div className="relative h-56 overflow-hidden">
                                                 <img 
-                                                    src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'} 
+                                                    src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
                                                     alt={pet.name}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                                 />

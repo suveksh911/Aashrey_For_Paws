@@ -44,6 +44,7 @@ export default function VaccinationReminder({ showAddForm = false }) {
     const [showForm, setShowForm] = useState(false);
     const [pets, setPets] = useState([]);
     const [form, setForm] = useState({ petId: '', petName: '', vaccineName: '', vaccinationDate: '', executionDate: '', notes: '', reminderDays: 3 });
+    const [initialForm, setInitialForm] = useState(null);
     const [customVaccine, setCustomVaccine] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -91,10 +92,21 @@ export default function VaccinationReminder({ showAddForm = false }) {
         }
         setSubmitting(true);
         try {
-            const payload = { ...form };
-            if (form.executionDate) {
-                payload.executionDate = form.executionDate;
+            if (editingId && initialForm && JSON.stringify(form) === JSON.stringify(initialForm)) {
+                toast.info('No changes made');
+                resetFormState();
+                setSubmitting(false);
+                return;
             }
+
+            const payload = { ...form };
+            if (!payload.executionDate) {
+                delete payload.executionDate;
+            }
+            if (!payload.petId) {
+                delete payload.petId;
+            }
+
             if (editingId) {
                 const res = await api.put(`/vaccinations/${editingId}`, payload);
                 if (res.data.success) {
@@ -121,6 +133,7 @@ export default function VaccinationReminder({ showAddForm = false }) {
 
     const resetFormState = () => {
         setForm({ petId: '', petName: '', vaccineName: '', vaccinationDate: '', executionDate: '', notes: '', reminderDays: 3 });
+        setInitialForm(null);
         setCustomVaccine(false);
         setShowForm(false);
         setEditingId(null);
@@ -131,7 +144,7 @@ export default function VaccinationReminder({ showAddForm = false }) {
         const yyyyMMdd = (dt) => dt ? new Date(dt).toISOString().split('T')[0] : '';
         const isCustom = !VACCINE_OPTIONS.includes(record.vaccineName);
         
-        setForm({
+        const newForm = {
             petId: record.petId || '',
             petName: record.petName,
             vaccineName: record.vaccineName,
@@ -139,7 +152,9 @@ export default function VaccinationReminder({ showAddForm = false }) {
             executionDate: yyyyMMdd(record.nextVaccinationDate),
             notes: record.notes || '',
             reminderDays: record.reminderDays ?? 3
-        });
+        };
+        setForm(newForm);
+        setInitialForm(newForm);
         setCustomVaccine(isCustom);
         setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });

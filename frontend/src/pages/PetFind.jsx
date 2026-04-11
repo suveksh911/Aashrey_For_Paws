@@ -171,9 +171,9 @@ function PetFind() {
                                     {/* Image + Overlays */}
                                     <div className="pet-image">
                                         <img
-                                            src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
+                                            src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'}
                                             alt={pet.name}
-                                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
+                                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'; }}
                                         />
                                         <span className={`status-badge ${(pet.status || 'Available').toLowerCase()}`}>
                                             {pet.status || 'Available'}

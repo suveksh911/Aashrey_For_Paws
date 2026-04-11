@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     FaBell, FaCheckCircle, FaExclamationCircle, FaInfoCircle,
-    FaTrash, FaCheck, FaPaw, FaShieldAlt, FaHeart
+    FaTrash, FaCheck, FaPaw, FaShieldAlt, FaHeart, FaChevronRight
 } from 'react-icons/fa';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
@@ -113,7 +113,6 @@ const Notifications = ({ isTab = false }) => {
         }}>
             <div style={{ maxWidth: isTab ? '100%' : 820, margin: isTab ? '0' : '0 auto' }}>
 
-                {/* Header - Hidden if embedded as a tab */}
                 {!isTab && (
                     <div style={{
                         background: 'linear-gradient(135deg, #3E2723 0%, #5D4037 100%)',
@@ -162,7 +161,6 @@ const Notifications = ({ isTab = false }) => {
                     </div>
                 )}
 
-                {/* Local Toolbar for Tab Mode */}
                 {isTab && notifications.length > 0 && (
                     <div className="flex justify-end gap-2 mb-4">
                         {unreadCount > 0 && (
@@ -176,7 +174,6 @@ const Notifications = ({ isTab = false }) => {
                     </div>
                 )}
 
-                {/* Filter tabs */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.2rem' }}>
                     {[
                         { key: 'all', label: `All (${notifications.length})` },
@@ -196,7 +193,6 @@ const Notifications = ({ isTab = false }) => {
                     ))}
                 </div>
 
-                {/* Content */}
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: 16 }}>
                         <FaBell size={40} color="#D7CCC8" style={{ display: 'block', margin: '0 auto 1rem' }} />
@@ -240,7 +236,6 @@ const Notifications = ({ isTab = false }) => {
                                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                                 >
-                                    {/* Type icon */}
                                     <div style={{
                                         width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
                                         background: typeStyle.bg, color: typeStyle.color,
@@ -250,47 +245,53 @@ const Notifications = ({ isTab = false }) => {
                                         {getIcon(notif.type)}
                                     </div>
 
-                                    {/* Content */}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{
                                             margin: '0 0 4px', fontSize: '0.92rem',
                                             color: notif.read ? '#555' : '#2D1B13',
-                                            fontWeight: notif.read ? 400 : 600,
+                                            fontWeight: notif.read ? 400 : 700,
                                             lineHeight: 1.5
                                         }}>
                                             {notif.message}
                                         </p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <span style={{ fontSize: '0.75rem', color: '#999' }}>{timeAgo(notif.createdAt)}</span>
-                                            {notif.link && (
-                                                <span style={{ fontSize: '0.72rem', color: '#8D6E63', fontWeight: 600, textDecoration: 'underline' }}>
-                                                    Click to view →
-                                                </span>
+                                            <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 500 }}>{timeAgo(notif.createdAt)}</span>
+                                            {!notif.read && (
+                                                <span style={{ fontSize: '0.65rem', background: '#5D4037', color: 'white', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>New</span>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Unread dot */}
-                                    {!notif.read && (
-                                        <div style={{
-                                            width: 10, height: 10, borderRadius: '50%',
-                                            background: '#5D4037', flexShrink: 0
-                                        }} />
+                                    {notif.link && (
+                                        <div className="action-arrow" style={{ color: '#D7CCC8', transition: 'transform 0.2s', marginRight: '5px' }}>
+                                            <FaChevronRight size={14} />
+                                        </div>
                                     )}
 
-                                    {/* Delete button */}
                                     <button
                                         onClick={(e) => deleteNotif(e, notif._id)}
-                                        title="Delete"
+                                        className="notif-delete-btn"
+                                        title="Delete notification"
                                         style={{
                                             background: 'none', border: 'none', cursor: 'pointer',
-                                            color: '#ccc', fontSize: '1.1rem', padding: '4px 6px',
-                                            borderRadius: 6, flexShrink: 0, lineHeight: 1,
-                                            transition: 'color 0.2s'
+                                            color: '#e0e0e0', fontSize: '1rem', padding: '8px',
+                                            borderRadius: '50%', flexShrink: 0, display: 'flex',
+                                            alignItems: 'center', justifyContent: 'center',
+                                            transition: 'all 0.2s', opacity: 0.6
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                                        onMouseLeave={e => e.currentTarget.style.color = '#ccc'}
-                                    >×</button>
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.color = '#ef4444';
+                                            e.currentTarget.style.background = '#FEE2E2';
+                                            e.currentTarget.style.opacity = '1';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.color = '#e0e0e0';
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.opacity = '0.6';
+                                        }}
+                                    >
+                                        <FaTrash size={12} />
+                                    </button>
                                 </div>
                             );
                         })}

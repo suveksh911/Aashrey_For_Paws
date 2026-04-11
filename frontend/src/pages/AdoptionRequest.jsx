@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/axios';
+import { FaArrowLeft } from 'react-icons/fa';
 
 function AdoptionRequest() {
     const { id } = useParams();
@@ -48,6 +49,17 @@ function AdoptionRequest() {
     return (
         <div className="container" style={{ padding: '2rem' }}>
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <button 
+                    onClick={() => navigate(-1)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'none', border: 'none', color: '#5D4037',
+                        fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                        marginBottom: '1.5rem', padding: '0'
+                    }}
+                >
+                    <FaArrowLeft /> Back
+                </button>
                 <h1 style={{ textAlign: 'center', marginBottom: '1rem' }}>Adopt {petName}</h1>
                 <p style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--color-text-secondary)' }}>
                     Please fill out this form to express your interest.

@@ -31,50 +31,13 @@ const PetHealthRecord = ({ pet, petId, ownerId }) => {
     const fetchRecords = async () => {
         try {
             const response = await api.get(`/pets/${actualPetId}/health-records`);
-            let apiRecords = response.data.success ? response.data.data : [];
+            const apiRecords = response.data.success ? response.data.data : [];
             
-            // Merge with local pet data if available
-            let localRecords = [];
-            if (pet) {
-                if (pet.vaccinations && pet.vaccinations.length > 0) {
-                    localRecords.push(...pet.vaccinations.map((v, idx) => ({
-                        id: `local-v-${idx}`,
-                        recordType: 'Vaccination',
-                        date: v.date,
-                        description: v.name,
-                        nextDueDate: v.nextDue
-                    })));
-                }
-                if (pet.medicalHistory && pet.medicalHistory.length > 0) {
-                    localRecords.push(...pet.medicalHistory.map((m, idx) => ({
-                        id: `local-m-${idx}`,
-                        recordType: 'Treatment',
-                        date: m.date,
-                        description: m.condition + (m.notes ? `: ${m.notes}` : ''),
-                    })));
-                }
-            }
-
-            // Combine and sort by date descending
-            const combined = [...apiRecords, ...localRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-            setRecords(combined);
+            // All records now live in the standalone collection
+            setRecords(apiRecords.sort((a, b) => new Date(b.date) - new Date(a.date)));
         } catch (error) {
             console.error("Failed to fetch health records", error);
-            // Fallback to local data only if API fails
-            if (pet) {
-                let localRecords = [];
-                if (pet.vaccinations) {
-                    localRecords.push(...pet.vaccinations.map((v, idx) => ({
-                        id: `local-v-${idx}`, recordType: 'Vaccination', date: v.date, description: v.name, nextDueDate: v.nextDue
-                    })));
-                }
-                if (pet.medicalHistory) {
-                    localRecords.push(...pet.medicalHistory.map((m, idx) => ({
-                        id: `local-m-${idx}`, recordType: 'Treatment', date: m.date, description: m.condition + (m.notes ? `: ${m.notes}` : ''),
-                    })));
-                }
-                setRecords(localRecords.sort((a, b) => new Date(b.date) - new Date(a.date)));
-            }
+            setRecords([]);
         } finally {
             setLoading(false);
         }

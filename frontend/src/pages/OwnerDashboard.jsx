@@ -456,7 +456,7 @@ export default function OwnerDashboard({ user }) {
                                             {myListings.slice(0, 3).map(pet => (
                                                 <div key={pet._id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500 p-2">
                                                     <div className="relative h-28 rounded-xl overflow-hidden mb-3">
-                                                        <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                        <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                                         <div className="absolute top-2 right-2"><StatusPill status={pet.status} /></div>
                                                     </div>
                                                     <h4 className="font-bold text-[#3E2723] text-sm px-1 truncate">{pet.name}</h4>
@@ -524,7 +524,7 @@ export default function OwnerDashboard({ user }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {myListings.map(pet => (
                                     <div key={pet._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                                        <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200'} className="w-full h-40 object-cover" />
+                                        <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-full h-40 object-cover" />
                                         <div className="p-4">
                                             <h3 className="font-bold text-[#3E2723] mb-2">{pet.name}</h3>
                                             <span className={`status-pill status-${pet.status?.toLowerCase() || 'available'}`}>{pet.status || 'Available'}</span>
@@ -705,7 +705,7 @@ export default function OwnerDashboard({ user }) {
                                 ) : (
                                     myListings.filter(p => p.status === 'Adopted').map(pet => (
                                         <div key={pet._id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-                                            <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/100x100'} className="w-16 h-16 rounded-xl object-cover" />
+                                            <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-16 h-16 rounded-xl object-cover" />
                                             <div>
                                                 <h3 className="font-bold text-[#3E2723]">{pet.name}</h3>
                                                 <p className="text-xs text-green-600 font-bold uppercase">Successfully Rehomed</p>
@@ -745,7 +745,7 @@ export default function OwnerDashboard({ user }) {
                                         <div key={pet._id} className="group bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-[#5D4037]/5 transition-all duration-500">
                                             <div className="relative h-56 overflow-hidden">
                                                 <img 
-                                                    src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'} 
+                                                    src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
                                                     alt={pet.name}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                                 />
@@ -905,7 +905,7 @@ export default function OwnerDashboard({ user }) {
                                 {myListings.filter(p => ['Lost', 'Found'].includes(p.type)).map(pet => (
                                     <div key={pet._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                                         <div className="relative">
-                                            <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/300x200'} className="w-full h-40 object-cover" />
+                                            <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-full h-40 object-cover" />
                                             <span className={`absolute top-2 left-2 ${pet.type === 'Lost' ? 'bg-red-500' : 'bg-blue-500'} text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider`}>
                                                 {pet.type}
                                             </span>

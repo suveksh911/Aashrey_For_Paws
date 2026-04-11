@@ -388,7 +388,7 @@ export default function AdopterDashboard({ user }) {
                                         <div className="space-y-3 flex-1">
                                             {favorites.slice(0, 3).map(pet => (
                                                 <div key={pet._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-[#8D6E63]/30 transition-colors">
-                                                    <img src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/100x100'} alt={pet.name} className="w-12 h-12 rounded-lg object-cover shadow-sm" />
+                                                    <img src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} alt={pet.name} className="w-12 h-12 rounded-lg object-cover shadow-sm" />
                                                     <div className="flex-1">
                                                         <h4 className="font-bold text-[#3E2723] text-sm">{pet.name}</h4>
                                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{pet.breed}</p>
@@ -493,7 +493,7 @@ export default function AdopterDashboard({ user }) {
                                         <div key={pet._id} className="group bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-[#5D4037]/5 transition-all duration-500">
                                             <div className="relative h-56 overflow-hidden">
                                                 <img 
-                                                    src={pet.image || pet.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'} 
+                                                    src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
                                                     alt={pet.name}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                                 />
@@ -570,7 +570,7 @@ export default function AdopterDashboard({ user }) {
                                     {history.map(item => (
                                         <div key={item._id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
                                             <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
-                                                <img src={item.petId?.image || item.petId?.images?.[0] || 'https://via.placeholder.com/100x100'} className="w-full h-full object-cover" />
+                                                <img src={item.petId?.image || item.petId?.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} className="w-full h-full object-cover" />
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-[#3E2723]">{item.petName}</h3>

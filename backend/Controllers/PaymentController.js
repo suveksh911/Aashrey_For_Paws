@@ -90,145 +90,138 @@ const verifyKhaltiPayment = async (req, res) => {
         const paymentRecord = await Payment.findOne({ transactionId: pidx });
 
         if (response.data.status === 'Completed') {
-            const isPurchase = paymentRecord?.purpose === 'PetPurchase';
-            const isDonation = paymentRecord?.purpose === 'Donation';
-            const isCampaign = paymentRecord?.purpose === 'CampaignContribution';
-            
-           
-            if (paymentRecord && paymentRecord.status !== 'completed') {
-                paymentRecord.status = 'completed';
-                paymentRecord.khaltiResponse = response.data;
-                await paymentRecord.save();
-            }
+            // ATOMIC UPDATE to prevent race condition from parallel Khalti webhook & redirect pings
+            const updatedRecord = await Payment.findOneAndUpdate(
+                { transactionId: pidx, status: { $ne: 'completed' } },
+                { $set: { status: 'completed', khaltiResponse: response.data } },
+                { new: true }
+            );
 
-            
-            if (isPurchase) {
-                try {
-                    const petId = paymentRecord.referenceId;
-                    const userId = paymentRecord.userId;
+            if (updatedRecord) {
+                const isPurchase = updatedRecord.purpose === 'PetPurchase';
+                const isDonation = updatedRecord.purpose === 'Donation';
+                const isCampaign = updatedRecord.purpose === 'CampaignContribution';
 
-                    if (petId && userId) {
-                        const pet = await PetModel.findById(petId);
-                        const buyer = await User.findById(userId);
+                if (isPurchase) {
+                    try {
+                        const petId = updatedRecord.referenceId;
+                        const userId = updatedRecord.userId;
 
-                        if (pet && buyer) {
-                           
-                            const existing = await AdoptionModel.findOne({ petId: pet._id, userId: buyer._id, reason: 'Purchased via Khalti' });
-                            
-                            if (!existing) {
+                        if (petId && userId) {
+                            const pet = await PetModel.findById(petId);
+                            const buyer = await User.findById(userId);
+
+                            if (pet && buyer) {
+                                const existing = await AdoptionModel.findOne({ petId: pet._id, userId: buyer._id, reason: 'Purchased via Khalti' });
                                 
-                                const finalOwnerId = pet.ownerId || pet.postedBy?.id || buyer._id; 
+                                if (!existing) {
+                                    const finalOwnerId = pet.ownerId || pet.postedBy?.id || buyer._id; 
 
-                                
-                                await AdoptionModel.create({
-                                    petId: pet._id,
-                                    petName: pet.name,
-                                    userId: buyer._id,
-                                    userName: buyer.name,
-                                    ownerId: finalOwnerId,
-                                    status: 'Adopted',
-                                    reason: 'Purchased via Khalti',
-                                    phone: buyer.phone || 'N/A',
-                                    date: new Date()
-                                });
+                                    await AdoptionModel.create({
+                                        petId: pet._id,
+                                        petName: pet.name,
+                                        userId: buyer._id,
+                                        userName: buyer.name,
+                                        ownerId: finalOwnerId,
+                                        status: 'Adopted',
+                                        reason: 'Purchased via Khalti',
+                                        phone: buyer.phone || 'N/A',
+                                        date: new Date()
+                                    });
 
-                                
-                                if (pet.status !== 'Adopted') {
-                                    const newQty = Math.max(0, (pet.quantity || 1) - 1);
-                                    const updates = { quantity: newQty };
-                                    if (newQty === 0) updates.status = 'Adopted';
-                                    await PetModel.findByIdAndUpdate(pet._id, updates);
+                                    if (pet.status !== 'Adopted') {
+                                        const newQty = Math.max(0, (pet.quantity || 1) - 1);
+                                        const updates = { quantity: newQty };
+                                        if (newQty === 0) updates.status = 'Adopted';
+                                        await PetModel.findByIdAndUpdate(pet._id, updates);
+                                    }
+
+                                    await createNotification(
+                                        buyer._id,
+                                        'success',
+                                        `🛒 Purchase Successful! ${pet.name} is now in your adoption history.`,
+                                        `/user?tab=history`
+                                    );
+
+                                    if (finalOwnerId.toString() !== buyer._id.toString()) {
+                                        await createNotification(
+                                            finalOwnerId,
+                                            'info',
+                                            `💰 Payment Received: ${buyer.name} bought ${pet.name}.`,
+                                            `/user?tab=incoming`
+                                        );
+                                    }
                                 }
+                            }
+                        }
+                    } catch (syncErr) {
+                        console.error("CRITICAL SYNC ERROR:", syncErr);
+                    }
+                } else if (isDonation) {
+                    try {
+                        const ngoId = updatedRecord.referenceId;
+                        const userId = updatedRecord.userId;
 
-                                
+                        if (ngoId) {
+                            const mongoose = require('mongoose');
+                            if (mongoose.Types.ObjectId.isValid(ngoId)) {
+                                const recipientNgo = await User.findById(ngoId);
+                                if (recipientNgo) {
+                                    await createNotification(
+                                        recipientNgo._id,
+                                        'info',
+                                        `💖 New Donation: ${req.user?.name || 'A supporter'} donated Rs. ${updatedRecord.amount} to your cause.`,
+                                        `/ngo?tab=donations`
+                                    );
+                                }
+                            }
+
+                            if (userId) {
                                 await createNotification(
-                                    buyer._id,
+                                    userId,
                                     'success',
-                                    `🛒 Purchase Successful! ${pet.name} is now in your adoption history.`,
+                                    `🙏 Thank you! Your donation of Rs. ${updatedRecord.amount} was successful.`,
                                     `/user?tab=history`
                                 );
+                            }
+                        }
+                    } catch (donationErr) {
+                        console.error("DONATION NOTIFICATION ERROR:", donationErr);
+                    }
+                } else if (isCampaign) {
+                    try {
+                        const campaignId = updatedRecord.referenceId;
+                        if (campaignId) {
+                            const campaign = await CampaignModel.findById(campaignId);
+                            if (campaign) {
+                                campaign.raisedAmount = (campaign.raisedAmount || 0) + updatedRecord.amount;
+                                if (campaign.raisedAmount >= campaign.targetAmount) {
+                                    campaign.status = 'Completed';
+                                }
+                                await campaign.save();
 
-                                if (finalOwnerId.toString() !== buyer._id.toString()) {
+                                if (campaign.ngoId) {
                                     await createNotification(
-                                        finalOwnerId,
+                                        campaign.ngoId,
                                         'info',
-                                        `💰 Payment Received: ${buyer.name} bought ${pet.name}.`,
-                                        `/user?tab=incoming`
+                                        `💰 Campaign Contribution: ${req.user?.name || 'A supporter'} donated Rs. ${updatedRecord.amount} to "${campaign.title}".`,
+                                        `/ngo?tab=campaigns`
+                                    );
+                                }
+
+                                if (updatedRecord.userId) {
+                                    await createNotification(
+                                        updatedRecord.userId,
+                                        'success',
+                                        `🙏 Thank you! Your contribution of Rs. ${updatedRecord.amount} to "${campaign.title}" was successful.`,
+                                        `/campaigns`
                                     );
                                 }
                             }
                         }
+                    } catch (campaignErr) {
+                        console.error("CAMPAIGN CONTRIBUTION ERROR:", campaignErr);
                     }
-                } catch (syncErr) {
-                    console.error("CRITICAL SYNC ERROR:", syncErr);
-                }
-            } else if (isDonation) {
-                try {
-                    const ngoId = paymentRecord.referenceId;
-                    const userId = paymentRecord.userId;
-
-                    if (ngoId) {
-                        const mongoose = require('mongoose');
-                        if (mongoose.Types.ObjectId.isValid(ngoId)) {
-                            const recipientNgo = await User.findById(ngoId);
-                            if (recipientNgo) {
-                                await createNotification(
-                                    recipientNgo._id,
-                                    'info',
-                                    `💖 New Donation: ${req.user?.name || 'A supporter'} donated Rs. ${paymentRecord.amount} to your cause.`,
-                                    `/ngo?tab=donations`
-                                );
-                            }
-                        }
-
-                        if (userId) {
-                            await createNotification(
-                                userId,
-                                'success',
-                                `🙏 Thank you! Your donation of Rs. ${paymentRecord.amount} was successful.`,
-                                `/user?tab=history`
-                            );
-                        }
-                    }
-                } catch (donationErr) {
-                    console.error("DONATION NOTIFICATION ERROR:", donationErr);
-                }
-            } else if (isCampaign) {
-                try {
-                    const campaignId = paymentRecord.referenceId;
-                    if (campaignId) {
-                        const campaign = await CampaignModel.findById(campaignId);
-                        if (campaign) {
-                            
-                            campaign.raisedAmount = (campaign.raisedAmount || 0) + paymentRecord.amount;
-                            if (campaign.raisedAmount >= campaign.targetAmount) {
-                                campaign.status = 'Completed';
-                            }
-                            await campaign.save();
-
-                            
-                            if (campaign.ngoId) {
-                                await createNotification(
-                                    campaign.ngoId,
-                                    'info',
-                                    `💰 Campaign Contribution: ${req.user?.name || 'A supporter'} donated Rs. ${paymentRecord.amount} to "${campaign.title}".`,
-                                    `/ngo?tab=campaigns`
-                                );
-                            }
-
-                            
-                            if (paymentRecord.userId) {
-                                await createNotification(
-                                    paymentRecord.userId,
-                                    'success',
-                                    `🙏 Thank you! Your contribution of Rs. ${paymentRecord.amount} to "${campaign.title}" was successful.`,
-                                    `/campaigns`
-                                );
-                            }
-                        }
-                    }
-                } catch (campaignErr) {
-                    console.error("CAMPAIGN CONTRIBUTION ERROR:", campaignErr);
                 }
             }
             return res.status(200).json({ success: true, message: "Payment verified successfully", data: response.data, paymentRecord });
