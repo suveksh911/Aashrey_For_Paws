@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGO_CONN, {
 }).then(() => console.log('Connected to MongoDB for seeding...'))
   .catch(err => { console.error('DB connection error:', err.message); process.exit(1); });
 
-// NGO Accounts for Testing
+// ── Real Nepal NGO Users ─────────────────────────────────────
 const ngoUsers = [
     {
         name: "Sneha's Care",
@@ -66,10 +66,10 @@ const ngoUsers = [
     }
 ];
 
-// Initial Pet Data
+// ── Pet Listings ─────────────────────────────────────────────
 const samplePets = [
     {
-        name: 'Kalu', age: '2 years', breed: 'Golden Retriever', category: 'Dog',
+        name: 'Buddy', age: '2 years', breed: 'Golden Retriever', category: 'Dog',
         type: 'Adoption', status: 'Available', isApproved: true,
         description: 'Buddy is a friendly and energetic Golden Retriever who loves playing fetch and cuddles.',
         image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
@@ -78,7 +78,7 @@ const samplePets = [
         owner: "Sneha's Care", gender: 'Male', healthStatus: 'Healthy', vaccinated: true
     },
     {
-        name: 'Seti', age: '1 year', breed: 'Persian', category: 'Cat',
+        name: 'Misty', age: '1 year', breed: 'Persian', category: 'Cat',
         type: 'Adoption', status: 'Available', isApproved: true,
         description: 'Misty is a calm and affectionate Persian cat. She loves napping in sunny spots.',
         image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
@@ -87,7 +87,7 @@ const samplePets = [
         owner: 'KAT Centre', gender: 'Female', healthStatus: 'Healthy', vaccinated: true
     },
     {
-        name: 'Bhyante', age: '3 years', breed: 'German Shepherd', category: 'Dog',
+        name: 'Rocky', age: '3 years', breed: 'German Shepherd', category: 'Dog',
         type: 'Adoption', status: 'Available', isApproved: true,
         description: 'Rocky is a loyal and protective companion. He needs an experienced owner.',
         image: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&w=800&q=80',
@@ -96,7 +96,7 @@ const samplePets = [
         owner: 'Street Dog Care', gender: 'Male', healthStatus: 'Healthy', vaccinated: false
     },
     {
-        name: 'Tara', age: '6 months', breed: 'Labrador Mix', category: 'Dog',
+        name: 'Luna', age: '6 months', breed: 'Labrador Mix', category: 'Dog',
         type: 'Lost', status: 'Pending', isApproved: true,
         description: 'Luna went missing near Thamel. She has a red collar. Please help us find her!',
         image: 'https://images.unsplash.com/photo-1591769225440-811ad7d6eca6?auto=format&fit=crop&w=800&q=80',
@@ -106,7 +106,7 @@ const samplePets = [
     }
 ];
 
-// Educational Content
+// ── Blog Posts ───────────────────────────────────────────────
 const samplePosts = [
     {
         title: 'Tips for First-Time Dog Owners',

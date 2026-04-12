@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// Security Configuration
+// ── Security ─────────────────────────────────────────────────
 app.use(helmet());
 
 const limiter = rateLimit({
@@ -19,16 +19,16 @@ const limiter = rateLimit({
 });
 app.use('/auth', limiter); 
 
-// Middleware Setup
+// ── Middleware ──────────────────────────────────────────────
 app.use(cors({ origin: config.frontendUrl || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
-// Basic health check
+// ── Health check ────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send('Aashrey For Paws Backend is running 🐾');
 });
 
-// API Routing
+// ── Routes ──────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/AuthRouter'));
 app.use('/api/pets', require('./routes/PetRouter'));
 app.use('/api/posts', require('./routes/PostRouter'));
@@ -44,12 +44,12 @@ app.use('/api/campaigns', require('./routes/CampaignRouter'));
 app.use('/api/ngo', require('./routes/NgoRouter'));
 app.use('/api/payment', require('./routes/PaymentRouter'));
 
-// Generic error handling
+// ── Global Error Handler ────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.log('Error caught in app handler:', err.stack);
+  console.error('Global Error:', err.stack);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Something went wrong on the server'
+    message: err.message || 'Internal Server Error'
   });
 });
 

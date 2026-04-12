@@ -11,7 +11,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// leaflet icon fix
+// Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -88,7 +88,8 @@ function PetDetails() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [showContact, setShowContact] = useState(false);
 
-        // favorites check
+    // Check if pet is already a favorite on load
+    useEffect(() => {
         const favoriteKey = user ? `userFavorites_${user._id}` : 'userFavorites_guest';
         const savedFavorites = JSON.parse(localStorage.getItem(favoriteKey)) || [];
         setIsFavorite(savedFavorites.some(p => p._id === id));
@@ -257,6 +258,7 @@ function PetDetails() {
                         </div>
                     </div>
 
+                    {/* Personality tags */}
                     {pet.personalities && pet.personalities.length > 0 && (
                         <div style={{ marginBottom: '1.25rem' }}>
                             <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '6px' }}>🐾 Personality</strong>
@@ -268,6 +270,7 @@ function PetDetails() {
                         </div>
                     )}
 
+                    {/* Posted By card */}
                     {pet.postedBy && (() => {
                         const cfg = POSTER_CONFIG[pet.postedBy.type] || POSTER_CONFIG.Owner;
                         const isNGO = pet.postedBy.type === 'NGO';
@@ -308,6 +311,7 @@ function PetDetails() {
                                     </button>
                                 </div>
 
+                                {/* Contact Info Dropdown */}
                                 {showContact && (
                                     <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px', animation: 'fadeIn 0.2s ease' }}>
                                         {pet.postedBy.email && (
@@ -338,6 +342,7 @@ function PetDetails() {
                         );
                     })()}
 
+                    {/* Urgent notice */}
                     {pet.urgent && (
                         <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontSize: '0.88rem', fontWeight: 600 }}>
                             <FaExclamationTriangle color="#f59e0b" /> Urgent adoption needed — this pet needs a home as soon as possible!

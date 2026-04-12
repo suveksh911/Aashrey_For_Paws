@@ -113,6 +113,7 @@ const Notifications = ({ isTab = false }) => {
         }}>
             <div style={{ maxWidth: isTab ? '100%' : 820, margin: isTab ? '0' : '0 auto' }}>
 
+                {/* Header - Hidden if embedded as a tab */}
                 {!isTab && (
                     <div style={{
                         background: 'linear-gradient(135deg, #3E2723 0%, #5D4037 100%)',
@@ -161,6 +162,7 @@ const Notifications = ({ isTab = false }) => {
                     </div>
                 )}
 
+                {/* Local Toolbar for Tab Mode */}
                 {isTab && notifications.length > 0 && (
                     <div className="flex justify-end gap-2 mb-4">
                         {unreadCount > 0 && (
@@ -174,6 +176,7 @@ const Notifications = ({ isTab = false }) => {
                     </div>
                 )}
 
+                {/* Filter tabs */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.2rem' }}>
                     {[
                         { key: 'all', label: `All (${notifications.length})` },
@@ -193,6 +196,7 @@ const Notifications = ({ isTab = false }) => {
                     ))}
                 </div>
 
+                {/* Content */}
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: 16 }}>
                         <FaBell size={40} color="#D7CCC8" style={{ display: 'block', margin: '0 auto 1rem' }} />
@@ -236,6 +240,7 @@ const Notifications = ({ isTab = false }) => {
                                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                                 >
+                                    {/* Type icon */}
                                     <div style={{
                                         width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
                                         background: typeStyle.bg, color: typeStyle.color,
@@ -245,6 +250,7 @@ const Notifications = ({ isTab = false }) => {
                                         {getIcon(notif.type)}
                                     </div>
 
+                                    {/* Content */}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{
                                             margin: '0 0 4px', fontSize: '0.92rem',
@@ -262,12 +268,14 @@ const Notifications = ({ isTab = false }) => {
                                         </div>
                                     </div>
 
+                                    {/* Action Arrow */}
                                     {notif.link && (
                                         <div className="action-arrow" style={{ color: '#D7CCC8', transition: 'transform 0.2s', marginRight: '5px' }}>
                                             <FaChevronRight size={14} />
                                         </div>
                                     )}
 
+                                    {/* Delete button */}
                                     <button
                                         onClick={(e) => deleteNotif(e, notif._id)}
                                         className="notif-delete-btn"

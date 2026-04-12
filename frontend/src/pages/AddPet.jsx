@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
 import MultiImageUpload from '../components/pet/MultiImageUpload';
-import PetHealthForm from '../components/pet/PetHealthForm';
+import PetHealthRecord from '../components/pet/PetHealthRecord';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -364,7 +364,7 @@ function AddPet() {
 
                         {/* Health Records */}
                         <div className="border-t border-gray-100 pt-6">
-                            <PetHealthForm 
+                            <PetHealthRecord 
                                 pet={petInfo} 
                                 isEditable={true} 
                                 onUpdate={handleHealthUpdate} 

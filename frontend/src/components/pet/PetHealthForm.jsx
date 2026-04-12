@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaSyringe, FaNotesMedical, FaCalendarAlt, FaPlus, FaTrash } from 'react-icons/fa';
 
-const PetHealthForm = ({ pet, isEditable = false, onUpdate }) => {
+const PetHealthRecords = ({ pet, isEditable = false, onUpdate }) => {
 
 
     const vaccinations = pet.vaccinations || [];
@@ -42,7 +42,7 @@ const PetHealthForm = ({ pet, isEditable = false, onUpdate }) => {
     };
 
     return (
-        <div className="health-medical-form" style={{ marginTop: '2rem', backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <div className="pet-health-records" style={{ marginTop: '2rem', backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#5d4037' }}>
                 <FaNotesMedical /> Health & Medical Records
             </h2>
@@ -228,4 +228,4 @@ const PetHealthForm = ({ pet, isEditable = false, onUpdate }) => {
     );
 };
 
-export default PetHealthForm;
+export default PetHealthRecords;

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import PetHealthForm from '../components/pet/PetHealthForm';
-import MultiImageUpload from '../components/pet//MultiImageUpload';
+import PetHealthRecord from '../components/pet/PetHealthRecord';
+import MultiImageUpload from '../components/pet/MultiImageUpload';
 import { useAuth } from '../context/AuthContext';
 
 function EditPet() {
@@ -198,11 +198,13 @@ function EditPet() {
                 </div>
 
                 <div style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-                    <PetHealthForm
+
+                    <PetHealthRecord
                         pet={formData}
                         isEditable={true}
                         onUpdate={(field, updatedData) => setFormData(prev => ({ ...prev, [field]: updatedData }))}
                     />
+
                 </div>
 
                 <div className="form-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
