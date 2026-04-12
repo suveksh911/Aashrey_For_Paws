@@ -400,3 +400,86 @@ button {
     animation: pulse-subtle 3s ease-in-out infinite;
     border-width: 3px !important;
 }
+
+/* ─── Global Layout ─── */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ─── Contact & Feedback Pages ─── */
+.contact-page { padding: 4rem 1rem; }
+.page-title {
+    text-align: center;
+    color: var(--color-primary-dark);
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+}
+.contact-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    max-width: 1000px;
+    margin: 0 auto 4rem;
+}
+.contact-info {
+    padding: 2rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+.contact-info h2, .contact-form h2 { color: var(--color-primary); margin-bottom: 1rem; }
+.contact-info p { margin-bottom: 2rem; color: var(--color-text-light); }
+.info-item { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.info-item .icon { font-size: 1.5rem; }
+.contact-form form { display: flex; flex-direction: column; gap: 1.5rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: inherit; background: #fff;
+    color: var(--color-text); appearance: auto;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: 2px solid var(--color-primary);
+}
+.feedback-section {
+    max-width: 800px; margin: 0 auto;
+    background: #fff; padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); text-align: center;
+}
+.feedback-section h2 { margin-bottom: 0.5rem; color: var(--color-primary-dark); }
+.star-container { display: flex; justify-content: center; margin-bottom: 1rem; }
+
+.fb-reviews-list {
+    margin-top: 2.5rem; text-align: left;
+    border-top: 1px solid #f0ece8; padding-top: 2rem;
+}
+.fb-reviews-list h3 { color: var(--color-primary-dark); margin-bottom: 1.25rem; }
+.fb-review-card {
+    background: #fdf8f5; padding: 1rem 1.25rem;
+    border-radius: 10px; margin-bottom: 1rem;
+    border: 1px solid #f0e8e2;
+}
+.fb-review-top {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 0.5rem;
+    flex-wrap: wrap; gap: 8px;
+}
+.fb-user-info { display: flex; align-items: center; gap: 10px; }
+.fb-username { display: block; font-weight: 700; font-size: 0.9rem; color: #5d4037; }
+.fb-date { display: block; font-size: 0.78rem; color: #aaa; }
+.fb-comment { font-style: italic; color: #666; margin: 0; font-size: 0.93rem; line-height: 1.5; }
+.review-actions { display: flex; gap: 0.4rem; }
+.icon-btn { background: none; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s; }
+.icon-btn:hover { transform: scale(1.15); }
+.edit-btn { color: #2196F3; }
+.delete-btn { color: #F44336; }
+
+@media (max-width: 768px) {
+    .contact-wrapper { grid-template-columns: 1fr; gap: 2rem; }
+}
+

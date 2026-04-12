@@ -66,11 +66,6 @@ const PetSchema = new Schema({
         default: 1,
         min: 0
     },
-    quantity: {
-        type: Number,
-        default: 1,
-        min: 0
-    },
     paymentDetails: {
         type: String,
         default: ''
@@ -85,11 +80,11 @@ const PetSchema = new Schema({
     },
     images: {
         type: [String], // Array of URLs
-        default: ['https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80']
+        default: []
     },
-    image: { // Main display image (kept for easier frontend access if needed, or derived from images[0])
+    image: { // Main display image
         type: String,
-        default: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80'
+        default: ''
     },
     location: {
         type: String,

@@ -42,7 +42,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Footer from './components/common/Footer';
 import api from './services/axios';
 
-import './App.css';
+
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {

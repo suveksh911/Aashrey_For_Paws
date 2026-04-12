@@ -1,16 +1,62 @@
-# React + Vite
+# Aashrey For Paws 🐾
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Aashrey For Paws** is a premium, community-driven platform dedicated to animal welfare, pet adoption, and lost-and-found services in Nepal. Our mission is to bridge the gap between animal shelters (NGOs), pet owners, and animal lovers to ensure every furry friend finds a loving home.
 
-Currently, two official plugins are available:
+## 🌟 Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Smart Adoption System**: Browse and adopt pets with verified health records and NGO validation.
+- **Lost & Found Tracker**: Real-time reporting and community alerts for lost pets.
+- **NGO Shelter Map**: Interactive map using Leaflet and Google Maps to locate nearest shelters and NGOs.
+- **Health Management**: Unified medical history and vaccination reminders for your pets.
+- **Community Forum**: Share stories, advice, and support other pet owners.
+- **Secure Donations**: Integrated payment gateway (Khalti) to support animal welfare organizations.
 
-## React Compiler
+## 🛠️ Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Frontend
+- **React 19** with Vite for high-performance builds.
+- **Tailwind CSS** & Custom Vanilla CSS for a premium, responsive UI.
+- **Leaflet & React-Leaflet** for geospatial features.
+- **React-Toastify** for interactive notifications.
 
-## Expanding the ESLint configuration
+### Backend
+- **Node.js & Express** for a robust RESTful API.
+- **MongoDB & Mongoose** for scalable data modeling.
+- **JSON Web Tokens (JWT)** for secure authentication.
+- **Cloudinary Integration** for optimized image handling.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- MongoDB account (local or Atlas)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone [repository-url]
+   cd "Aashrey For Paws"
+   ```
+
+2. **Setup Backend**
+   ```bash
+   cd backend
+   npm install
+   # Create a .env file based on .env.example
+   npm run dev
+   ```
+
+3. **Setup Frontend**
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
+
+## 📄 License
+
+This project is licensed under the ISC License.
+
+---
+*Built with ❤️ for animals in Nepal.*
