@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { GoogleMap, MarkerF, InfoWindowF, useJsApiLoader } from '@react-google-maps/api';
 import { Link } from 'react-router-dom';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Fix for default marker icons in Leaflet with React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-const center = [27.7172, 85.3240]; // Kathmandu Latitude & Longitude
+const center = { lat: 27.7172, lng: 85.3240 };
+const containerStyle = { width: '100%', height: '100%' };
 
 const MapComponent = ({ pets = [] }) => {
+    const { isLoaded } = useJsApiLoader({
+        id: 'google-map-script',
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    });
+
     const [markers, setMarkers] = useState([]);
+    const [selectedPet, setSelectedPet] = useState(null);
 
     useEffect(() => {
-        // Assign random offsets around Kathmandu for pets without strict coordinates
         if (pets.length > 0) {
             const processedMarkers = pets.map((pet) => {
                 const lat = pet.lat || (27.7172 + (Math.random() - 0.5) * 0.1);
@@ -29,43 +25,58 @@ const MapComponent = ({ pets = [] }) => {
         }
     }, [pets]);
 
+    if (!isLoaded) return <div style={{ width: '100%', height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Maps...</div>;
+
     return (
         <div style={{ width: '100%', height: '500px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ddd' }}>
-            <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                
+            <GoogleMap
+                mapContainerStyle={containerStyle}
+                center={center}
+                zoom={12}
+                options={{
+                    disableDefaultUI: false,
+                    zoomControl: true,
+                }}
+            >
                 {markers.map(pet => (
-                    <Marker key={pet._id || pet.id} position={[pet.lat, pet.lng]}>
-                        <Popup>
-                            <div className="map-popup-card" style={{ width: '200px' }}>
-                                <div className="popup-img" style={{ marginBottom: '8px' }}>
-                                    <img 
-                                        src={pet.image || pet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
-                                        alt={pet.name} 
-                                        style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px' }} 
-                                    />
-                                </div>
-                                <div className="popup-info">
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#5d4037' }}>{pet.name}</h4>
-                                    <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#666' }}>{pet.breed}</p>
-                                    <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', fontWeight: 'bold', color: pet.adoptionStatus === 'Available' ? 'green' : 'red' }}>
-                                        {pet.adoptionStatus}
-                                    </p>
-                                    <Link 
-                                        to={`/pet/${pet._id}`} 
-                                        style={{ display: 'block', background: '#5d4037', color: 'white', textAlign: 'center', padding: '6px', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem' }}
-                                    >
-                                        View Profile
-                                    </Link>
-                                </div>
-                            </div>
-                        </Popup>
-                    </Marker>
+                    <MarkerF 
+                        key={pet._id || pet.id} 
+                        position={{ lat: pet.lat, lng: pet.lng }}
+                        onClick={() => setSelectedPet(pet)}
+                    />
                 ))}
-            </MapContainer>
+
+                {selectedPet && (
+                    <InfoWindowF
+                        position={{ lat: selectedPet.lat, lng: selectedPet.lng }}
+                        onCloseClick={() => setSelectedPet(null)}
+                    >
+                        {/* THE UI BELOW IS EXACTLY THE SAME AS YOUR ORIGINAL CODE */}
+                        <div className="map-popup-card" style={{ width: '200px' }}>
+                            <div className="popup-img" style={{ marginBottom: '8px' }}>
+                                <img 
+                                    src={selectedPet.image || selectedPet.images?.[0] || 'https://placehold.co/600x400/5d4037/FFF?text=Image+Unavailable'} 
+                                    alt={selectedPet.name} 
+                                    style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px' }} 
+                                />
+                            </div>
+                            <div className="popup-info">
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#5d4037' }}>{selectedPet.name}</h4>
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#666' }}>{selectedPet.breed}</p>
+                                <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', fontWeight: 'bold', color: selectedPet.adoptionStatus === 'Available' ? 'green' : 'red' }}>
+                                    {selectedPet.adoptionStatus}
+                                </p>
+                                <Link 
+                                    to={`/pet/${selectedPet._id}`} 
+                                    style={{ display: 'block', background: '#5d4037', color: 'white', textAlign: 'center', padding: '6px', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem' }}
+                                >
+                                    View Profile
+                                </Link>
+                            </div>
+                        </div>
+                    </InfoWindowF>
+                )}
+            </GoogleMap>
         </div>
     );
 };

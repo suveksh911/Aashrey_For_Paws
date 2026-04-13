@@ -1,39 +1,37 @@
-import React, { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import React from "react";
+import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 
-// Fix for default marker icons in Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+const containerStyle = {
+  width: "100%",
+  height: "100%",
+};
 
 const LocationPicker = ({ position, setPosition }) => {
-  function LocationMarker() {
-    useMapEvents({
-      click(e) {
-        setPosition([e.latlng.lat, e.latlng.lng]);
-      },
-    });
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
 
-    return position === null ? null : (
-      <Marker position={position}></Marker>
-    );
-  }
+  const onMapClick = (e) => {
+    setPosition([e.latLng.lat(), e.latLng.lng()]);
+  };
+
+  if (!isLoaded) return <div className="h-64 mt-4 rounded-xl bg-gray-50 flex items-center justify-center text-xs text-gray-400">Loading Map...</div>;
+
+  const center = position ? { lat: position[0], lng: position[1] } : { lat: 27.7172, lng: 85.324 };
 
   return (
     <div className="h-64 mt-4 rounded-xl overflow-hidden shadow-sm border border-gray-200">
-      <MapContainer
-        center={position || [27.7172, 85.324]}
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={center}
         zoom={13}
-        style={{ height: "100%", width: "100%" }}
+        onClick={onMapClick}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <LocationMarker />
-      </MapContainer>
+        {position && (
+          <MarkerF position={{ lat: position[0], lng: position[1] }} />
+        )}
+      </GoogleMap>
     </div>
   );
 };

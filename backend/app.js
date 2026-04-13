@@ -44,7 +44,7 @@ app.use('/api/campaigns', require('./routes/CampaignRouter'));
 app.use('/api/ngo', require('./routes/NgoRouter'));
 app.use('/api/payment', require('./routes/PaymentRouter'));
 
-// ── Global Error Handler ────────────────────────────────────
+
 app.use((err, req, res, next) => {
   console.error('Global Error:', err.stack);
   res.status(err.status || 500).json({
@@ -54,5 +54,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
-

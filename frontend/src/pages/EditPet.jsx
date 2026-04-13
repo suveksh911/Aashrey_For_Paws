@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import PetHealthRecord from '../components/pet/PetHealthRecord';
+import PetHealthRecord from '../components/pet/PetHealthForm';
 import MultiImageUpload from '../components/pet/MultiImageUpload';
 import { useAuth } from '../context/AuthContext';
 
