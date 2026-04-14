@@ -144,12 +144,12 @@ function AddPet() {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
             <div className="max-w-2xl mx-auto">
+                <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-2 text-sm font-bold text-[#5D4037] hover:opacity-80 transition-all">
+                    &larr; Back
+                </button>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     {/* Header - EXACT SAME UI */}
                     <div className="bg-gradient-to-r from-[#8D6E63] to-[#5D4037] px-6 py-5 text-white relative">
-                        <button onClick={() => navigate(-1)} className="absolute left-6 top-6 text-white hover:text-amber-200 transition-colors flex items-center gap-2 text-sm font-semibold">
-                           &larr; Back
-                        </button>
                         <h1 className="text-2xl font-bold mt-4">Add a New Pet</h1>
                         <p className="text-amber-100 text-sm mt-1">Fill in the details to create your pet listing</p>
                     </div>
