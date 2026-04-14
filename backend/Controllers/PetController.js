@@ -1,7 +1,7 @@
 const PetModel = require('../models/Pet');
 const HealthRecordModel = require('../models/HealthRecord');
 const { uploadBase64Image } = require('../utils/cloudinary');
-const { createNotification } = require('./NotificationController');
+const { createNotification, notifyAdmins } = require('./NotificationController');
 
 const getAllPets = async (req, res) => {
     try {
@@ -142,6 +142,21 @@ const createPet = async (req, res) => {
             `🐾 Your pet "${body.name}" has been successfully added! ${newPet.isApproved ? '' : 'It will be visible after admin approval.'}`,
             `/user`
         );
+
+        // Notify Admins
+        if (newPet.isApproved) {
+            await notifyAdmins(
+                'success',
+                `🐾 New Pet Listing: "${newPet.name}" by ${newPet.owner}`,
+                `/admin?tab=pets`
+            );
+        } else {
+            await notifyAdmins(
+                'warning',
+                `⌛ New Pet awaiting approval: "${newPet.name}" by NGO ${newPet.owner}`,
+                `/admin?tab=pending-pets`
+            );
+        }
 
         res.status(201).json({ success: true, message: "Pet added successfully", data: newPet });
     } catch (err) {

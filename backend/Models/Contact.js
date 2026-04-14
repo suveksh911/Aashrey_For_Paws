@@ -28,7 +28,8 @@ const ContactSchema = new Schema({
         default: false
     },
     replies: [{
-        adminId: { type: Schema.Types.ObjectId, ref: 'User' },
+        senderId: { type: Schema.Types.ObjectId, ref: 'User' },
+        senderRole: { type: String, enum: ['Admin', 'User'], default: 'Admin' },
         message: String,
         createdAt: { type: Date, default: Date.now }
     }],

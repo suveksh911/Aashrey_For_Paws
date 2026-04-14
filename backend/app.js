@@ -43,6 +43,7 @@ app.use('/api/feedback', require('./routes/FeedbackRouter'));
 app.use('/api/campaigns', require('./routes/CampaignRouter'));
 app.use('/api/ngo', require('./routes/NgoRouter'));
 app.use('/api/payment', require('./routes/PaymentRouter'));
+app.use('/api/settings', require('./routes/SettingRouter'));
 
 
 app.use((err, req, res, next) => {

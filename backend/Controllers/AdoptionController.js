@@ -1,6 +1,6 @@
 const AdoptionModel = require('../models/Adoption');
 const PetModel = require('../models/Pet');
-const { createNotification } = require('./NotificationController');
+const { createNotification, notifyAdmins } = require('./NotificationController');
 
 const createAdoptionRequest = async (req, res) => {
     try {
@@ -25,6 +25,13 @@ const createAdoptionRequest = async (req, res) => {
             'info',
             `🐶 New adoption request for ${petName} from ${userName || req.user.name}`,
             `/user` 
+        );
+
+        // Notify Admins
+        await notifyAdmins(
+            'info',
+            `🐶 New Adoption Inquiry: ${userName || req.user.name} for "${petName}"`,
+            `/admin?tab=overview`
         );
 
         res.status(201).json({ success: true, message: "Adoption request submitted", data: adoptionRequest });

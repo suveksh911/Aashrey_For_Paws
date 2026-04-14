@@ -39,6 +39,7 @@ import PetPurchase from './pages/PetPurchase';
 import NGOShelterMap from './pages/NGOShelterMap';
 import RoleProfiles from './pages/RoleProfiles';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Footer from './components/common/Footer';
 import api from './services/axios';
 
@@ -49,6 +50,7 @@ function App() {
   return (
     <div className="app-wrapper">
       <AuthProvider>
+      <SettingsProvider>
         <Router>
           <Navbar />
           <Routes>
@@ -89,17 +91,17 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['NGO']} />}>
               <Route path="/ngo" element={<NGODashboard />} />
             </Route>
-            {/* Protected Routes */}
+            {/* Protected Routes (Any Authenticated User) */}
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<UserProfile />} />
-            </Route>
-
-            <Route element={<ProtectedRoute allowedRoles={['User', 'Adopter', 'Owner']} />}>
-              <Route path="/user" element={<UserDashboard />} />
               <Route path="/adopt/:id" element={<AdoptionRequest />} />
               <Route path="/adoption-status" element={<AdoptionStatus />} />
               <Route path="/adoption-history" element={<AdoptionHistory />} />
               <Route path="/pet/buy/:id" element={<PetPurchase />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['User', 'Adopter', 'Owner']} />}>
+              <Route path="/user" element={<UserDashboard />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
@@ -107,6 +109,7 @@ function App() {
           <Footer />
           <ToastContainer position="top-right" autoClose={3000} />
         </Router>
+      </SettingsProvider>
       </AuthProvider>
     </div>
   );

@@ -1,5 +1,5 @@
 const ContactModel = require('../models/Contact');
-const { createNotification } = require('./NotificationController');
+const { createNotification, notifyAdmins } = require('./NotificationController');
 const { sendEmail } = require('../utils/mail');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
@@ -20,6 +20,14 @@ const submitContact = async (req, res) => {
 
         const newContact = new ContactModel(body);
         await newContact.save();
+
+        // Notify Admins
+        await notifyAdmins(
+            'info',
+            `📬 New Message from ${body.name || 'Visitor'}: "${body.subject || 'General inquiry'}"`,
+            '/admin?tab=messages'
+        );
+
         res.status(201).json({ success: true, message: "Message sent successfully" });
     } catch (err) {
         res.status(500).json({ success: false, message: "Failed to send message" });
@@ -29,15 +37,21 @@ const submitContact = async (req, res) => {
 const replyToContact = async (req, res) => {
     try {
         const { id } = req.params;
-        const { message } = req.body;
-        const adminId = req.user._id;
+    const { message } = req.body;
+    const senderId = req.user._id;
 
-        const contact = await ContactModel.findById(id);
-        if (!contact) return res.status(404).json({ success: false, message: "Message not found" });
+    const contact = await ContactModel.findById(id);
+    if (!contact) return res.status(404).json({ success: false, message: "Message not found" });
 
-        contact.replies.push({ adminId, message });
-        contact.isReplied = true;
-        await contact.save();
+    // Prevent duplicate replies (basic shield)
+    const lastReply = contact.replies[contact.replies.length - 1];
+    if (lastReply && lastReply.message === message && (Date.now() - new Date(lastReply.createdAt).getTime() < 5000)) {
+        return res.status(400).json({ success: false, message: "Duplicate response detected" });
+    }
+
+    contact.replies.push({ senderId, senderRole: 'Admin', message });
+    contact.isReplied = true;
+    await contact.save();
 
         
         if (contact.userId) {
@@ -110,11 +124,48 @@ const deleteContact = async (req, res) => {
     }
 }
 
+const userReplyToContact = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { message } = req.body;
+        const senderId = req.user._id;
+
+        const contact = await ContactModel.findById(id);
+        if (!contact) return res.status(404).json({ success: false, message: "Message not found" });
+
+        // Security: Only the original sender can reply
+        if (contact.userId?.toString() !== senderId.toString() && contact.email !== req.user.email) {
+            return res.status(403).json({ success: false, message: "Unauthorized to reply to this message" });
+        }
+
+        // Prevent duplicates
+        const lastReply = contact.replies[contact.replies.length - 1];
+        if (lastReply && lastReply.message === message && (Date.now() - new Date(lastReply.createdAt).getTime() < 5000)) {
+            return res.status(400).json({ success: false, message: "Duplicate reply detected" });
+        }
+
+        contact.replies.push({ senderId, senderRole: 'User', message });
+        await contact.save();
+
+        // Notify Admins
+        await notifyAdmins(
+            'info',
+            `💬 User Reply: ${req.user.name} sent a follow-up to "${contact.subject || 'General inquiry'}"`,
+            '/admin?tab=messages'
+        );
+
+        res.status(200).json({ success: true, message: "Reply sent successfully", data: contact });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Failed to send reply" });
+    }
+}
+
 module.exports = {
     submitContact,
     getContacts,
     getMyContacts,
     replyToContact,
+    userReplyToContact,
     deleteContact
 }
 

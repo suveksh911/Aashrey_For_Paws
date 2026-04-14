@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
-import { FaSearch, FaMapMarkerAlt, FaPaw, FaMap, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaBuilding, FaUser, FaStore, FaStar } from 'react-icons/fa';
+import { FaSearch, FaMapMarkerAlt, FaPaw, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaBuilding, FaUser, FaStore, FaStar, FaFilter } from 'react-icons/fa';
 import AdvancedSearch from '../components/pet/AdvancedSearch';
-import MapComponent from '../components/common/MapComponent';
 import NGOVerifiedBadge from '../components/ngo/NGOVerifiedBadge';
 import Skeleton from '../components/common/Skeleton';
 
@@ -36,13 +35,15 @@ function PetFind() {
     const [pets, setPets] = useState([]);
     const [filteredPets, setFilteredPets] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showMap, setShowMap] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
-        type: '', breed: '', age: '', gender: '', location: '', search: '', posterType: ''
+        category: '', breed: '', age: '', gender: '', location: '', search: '', listingType: ''
     });
 
     useEffect(() => { fetchPets(); }, []);
     useEffect(() => { applyFilters(); }, [filters, pets]);
+
+    const activeFiltersCount = Object.entries(filters).filter(([k, v]) => k !== 'search' && v && v.trim() !== '').length;
 
     const fetchPets = async () => {
         setLoading(true);
@@ -80,7 +81,8 @@ function PetFind() {
                 (p.location || '').toLowerCase().includes(s)
             );
         }
-        if (filters.type) result = result.filter(p => p.type === filters.type || p.category === filters.type);
+        if (filters.category) result = result.filter(p => p.category === filters.category);
+        if (filters.listingType) result = result.filter(p => p.listingType === filters.listingType || p.type === filters.listingType);
         if (filters.gender) result = result.filter(p => p.gender === filters.gender);
         if (filters.location) result = result.filter(p => (p.location || '').toLowerCase().includes(filters.location.toLowerCase()));
         
@@ -115,16 +117,10 @@ function PetFind() {
             <div className="pet-find-header">
                 <h1>Find a Friend 🐾</h1>
                 <p>Browse pets available for adoption near you.</p>
-                <button
-                    onClick={() => setShowMap(!showMap)}
-                    style={{ marginTop: '1rem', padding: '10px 20px', borderRadius: '20px', border: 'none', background: 'white', color: '#5d4037', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                >
-                    <FaMap /> {showMap ? 'Show List' : 'Show Map View'}
-                </button>
             </div>
 
-            {/* Search bar */}
-            <div className="search-filter-bar">
+            {/* Unified Control Bar */}
+            <div className="unified-control-bar">
                 <div className="search-input">
                     <FaSearch className="icon" />
                     <input
@@ -135,17 +131,22 @@ function PetFind() {
                         onChange={handleFilterChange}
                     />
                 </div>
+                <div className="control-actions">
+                    <button 
+                        className={`control-btn ${showFilters ? 'active' : ''}`}
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <FaFilter /> Filters {activeFiltersCount > 0 && <span className="badge">{activeFiltersCount}</span>}
+                    </button>
+                </div>
             </div>
 
-            <AdvancedSearch onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))} />
+            {/* Advanced Filters Container */}
+            {showFilters && (
+                <AdvancedSearch onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))} hideHeader={true} />
+            )}
 
-            {showMap ? (
-                <div style={{ marginTop: '2rem' }}>
-                    <MapComponent pets={filteredPets} />
-                </div>
-            ) : (
-                <>
-                    {loading ? (
+            {loading ? (
                         <div className="pet-grid">
                             {[1, 2, 3, 4, 5, 6].map(n => (
                                 <div key={n} className="pet-card">
@@ -270,8 +271,6 @@ function PetFind() {
                             ))}
                         </div>
                     )}
-                </>
-            )}
 
             <style>{`
                 .pet-find-header {
@@ -288,37 +287,84 @@ function PetFind() {
                 .pet-find-header h1 { font-size: 3rem; margin-bottom: 0.5rem; color: white; }
                 .pet-find-header p  { font-size: 1.2rem; opacity: 0.9; }
 
-                .search-filter-bar {
-                    background: var(--color-surface);
-                    padding: 1.25rem 1.5rem;
-                    border-radius: var(--radius-md);
-                    box-shadow: var(--shadow-sm);
-                    margin-bottom: 1.5rem;
+                .unified-control-bar {
+                    background: white;
+                    padding: 0.85rem 1.25rem;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+                    margin-bottom: 2rem;
                     display: flex;
                     flex-wrap: wrap;
                     gap: 1rem;
                     align-items: center;
                     justify-content: space-between;
+                    border: 1px solid rgba(0,0,0,0.04);
                 }
-                .search-input { position: relative; flex: 1; min-width: 220px; }
+                .search-input { position: relative; flex: 1; min-width: 250px; }
                 .search-input input {
                     width: 100%;
-                    padding: 0.7rem 1rem 0.7rem 2.4rem;
-                    border: 1px solid var(--color-border);
-                    border-radius: var(--radius-full);
+                    padding: 0.75rem 1rem 0.75rem 2.8rem;
+                    border: 1.5px solid #e5e7eb;
+                    border-radius: 12px;
                     font-size: 0.95rem;
+                    box-sizing: border-box;
+                    background: #f9fafb;
+                    transition: all 0.2s;
+                }
+                .search-input input:focus {
+                    outline: none;
+                    border-color: #8D6E63;
+                    background: white;
+                    box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
                 }
                 .search-input .icon {
-                    position: absolute; left: 0.85rem; top: 50%;
-                    transform: translateY(-50%); color: var(--color-text-light);
+                    position: absolute; left: 1rem; top: 50%;
+                    transform: translateY(-50%); color: #9ca3af;
                 }
-                .filter-select {
-                    padding: 0.65rem 0.9rem;
-                    border: 1px solid var(--color-border);
-                    border-radius: var(--radius-md);
-                    background: white;
-                    font-size: 0.88rem;
+                .control-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                }
+                .control-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: #fff;
+                    border: 1.5px solid #e5e7eb;
+                    padding: 0.75rem 1.25rem;
+                    border-radius: 12px;
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    color: #4b5563;
                     cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .control-btn:hover {
+                    border-color: #d1d5db;
+                    background: #f9fafb;
+                    color: #111827;
+                }
+                .control-btn.active {
+                    background: #8D6E63;
+                    color: white;
+                    border-color: #8D6E63;
+                }
+                .control-btn .badge {
+                    background: #5D4037;
+                    color: white;
+                    border-radius: 50%;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.7rem;
+                    margin-left: 2px;
+                }
+                .control-btn.active .badge {
+                    background: white;
+                    color: #8D6E63;
                 }
 
                 .pet-grid {
@@ -398,9 +444,11 @@ function PetFind() {
                 .empty-state { text-align: center; padding: 4rem 1rem; color: #aaa; }
                 .empty-state h3 { margin: 1rem 0 0.5rem; color: #888; }
 
-                @media (max-width: 600px) {
-                    .search-filter-bar { flex-direction: column; }
-                    .pet-grid { grid-template-columns: 1fr; }
+                @media (max-width: 768px) {
+                    .unified-control-bar { flex-direction: column; align-items: stretch; }
+                    .control-actions { width: 100%; justify-content: stretch; }
+                    .control-btn { flex: 1; justify-content: center; }
+                    .pet-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
                 }
             `}</style>
         </div>

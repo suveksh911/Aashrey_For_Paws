@@ -174,7 +174,7 @@ const Overview = ({ petCount, reportCount, requestCount, campaignCount, approved
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {stats.map((s, idx) => (
                     <div key={idx} 
-                        onClick={() => onStatClick(s.tab)}
+                        onClick={() => handleTabChange(s.tab)}
                         className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3 hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all">
                         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} text-white flex items-center justify-center shadow-lg shadow-amber-500/10`}>
                             {React.cloneElement(s.icon, { size: 16 })}
@@ -996,7 +996,19 @@ const NAV_ITEMS = [
 ];
 
 export default function NGODashboard() {
-    const [tab, setTab] = useState('overview');
+    const [tab, setTab] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') || localStorage.getItem('ngo_active_tab') || 'overview';
+    });
+
+    const handleTabChange = (key) => {
+        setTab(key);
+        localStorage.setItem('ngo_active_tab', key);
+        setSidebarOpen(false);
+        const newUrl = key === 'overview' ? '/ngo' : `/ngo?tab=${key}`;
+        window.history.replaceState({}, '', newUrl);
+    };
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     useVaccinationReminders();
     const fileInputRef = React.useRef(null);
@@ -1136,12 +1148,7 @@ export default function NGODashboard() {
         reader.readAsDataURL(file);
     };
 
-    const handleTabChange = (key) => {
-        setTab(key);
-        setSidebarOpen(false);
-        const newUrl = key === 'overview' ? '/ngo' : `/ngo?tab=${key}`;
-        window.history.pushState(null, '', newUrl);
-    };
+
 
     const getChartData = () => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1215,12 +1222,7 @@ export default function NGODashboard() {
                     {NAV_ITEMS.map((item) => (
                         <button
                             key={item.key}
-                            onClick={() => {
-                                setTab(item.key);
-                                setSidebarOpen(false);
-                                const newUrl = item.key === 'overview' ? '/ngo' : `/ngo?tab=${item.key}`;
-                                window.history.pushState(null, '', newUrl);
-                            }}
+                            onClick={() => handleTabChange(item.key)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all
                                 ${tab === item.key
                                     ? 'bg-white/15 text-white'
@@ -1280,7 +1282,7 @@ export default function NGODashboard() {
                             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                         )}
                     </button>
-                    <Link to="/profile" onClick={(e) => { e.preventDefault(); setTab('profile'); window.history.pushState(null, '', '/ngo?tab=profile'); }} className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors">
+                    <Link to="/profile" onClick={(e) => { e.preventDefault(); handleTabChange('profile'); }} className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors">
                         <FaUserCircle size={20} />
                     </Link>
                 </header>
@@ -1439,13 +1441,12 @@ export default function NGODashboard() {
                                             </div>
                                             <h1 className="text-3xl font-black text-white leading-tight mb-1">{user?.name || 'NGO Dashboard'}</h1>
                                             <div className="relative">
-                                                <p 
-                                                    ref={bioRef}
-                                                    className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}
-                                                >
-                                                    {user?.bio || 'Dedicated to animal welfare and community service.'}
+                                                <p className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}>
+                                                    {(user?.bio || 'Dedicated to animal welfare and community service.').length > 120 && !isBioExpanded
+                                                        ? (user?.bio || 'Dedicated to animal welfare and community service.').slice(0, 120) + '...'
+                                                        : (user?.bio || 'Dedicated to animal welfare and community service.')}
                                                 </p>
-                                                {(showReadMore || isBioExpanded) && (
+                                                {((user?.bio || 'Dedicated to animal welfare and community service.').length > 120) && (
                                                     <button 
                                                         onClick={(e) => { 
                                                             e.stopPropagation(); 
@@ -1453,7 +1454,7 @@ export default function NGODashboard() {
                                                         }}
                                                         className="a-read-more-btn"
                                                     >
-                                                        {isBioExpanded ? 'Show Less' : 'Read More'}
+                                                        {isBioExpanded ? 'Read less' : 'Read more'}
                                                     </button>
                                                 )}
                                             </div>
@@ -1474,9 +1475,10 @@ export default function NGODashboard() {
                                                     setIsEditingProfile(true);
                                                 }
                                             }}
-                                            style={{ background: isEditingProfile ? '#fff' : 'transparent', color: isEditingProfile ? '#3E2723' : '#fff', borderColor: isEditingProfile ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                                            style={{ background: isEditingProfile ? '#fff' : 'transparent', color: isEditingProfile ? '#3E2723' : '#fff' }}
                                         >
-                                            {isEditingProfile ? <><FaSave /> Finish Editing</> : <><FaEdit /> Edit Profile</>}
+                                            <style>{`.edit-profile-btn { border: 2px solid ${isEditingProfile ? '#fff' : 'rgba(255,255,255,0.3)'} !important; border-radius: 12px; padding: 10px 20px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }`}</style>
+                                            {isEditingProfile ? <><FaCheckCircle /> Finish Editing</> : <><FaUserCircle /> Edit Profile</>}
                                         </button>
                                         <button className="a-list-btn" onClick={() => navigate('/add-pet')}>
                                             <FaPlus /> List a Pet

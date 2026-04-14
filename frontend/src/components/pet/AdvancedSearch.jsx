@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 
-const AdvancedSearch = ({ onFilterChange }) => {
+const AdvancedSearch = ({ onFilterChange, hideHeader = false }) => {
     const [filters, setFilters] = useState({
-        type: '',
+        category: '',
         breed: '',
         gender: '',
         age: '',
@@ -21,7 +21,7 @@ const AdvancedSearch = ({ onFilterChange }) => {
     };
 
     const clearFilters = () => {
-        const reset = { type: '', breed: '', gender: '', age: '', listingType: '', location: '' };
+        const reset = { category: '', breed: '', gender: '', age: '', listingType: '', location: '' };
         setFilters(reset);
         onFilterChange(reset);
     };
@@ -30,28 +30,30 @@ const AdvancedSearch = ({ onFilterChange }) => {
     const activeCount = Object.values(filters).filter(v => v !== '').length;
 
     return (
-        <div className="adv-filter-container">
-            <div className="adv-filter-header">
-                <div className="adv-filter-title">
-                    <FaFilter size={13} />
-                    <span>Filters</span>
-                    {hasActiveFilters && (
-                        <span className="adv-filter-count">{activeCount}</span>
-                    )}
+        <div className={`adv-filter-container ${hideHeader ? 'no-header' : ''}`}>
+            {!hideHeader && (
+                <div className="adv-filter-header">
+                    <div className="adv-filter-title">
+                        <FaFilter size={13} />
+                        <span>Filters</span>
+                        {hasActiveFilters && (
+                            <span className="adv-filter-count">{activeCount}</span>
+                        )}
+                    </div>
+                    <button className="adv-toggle-btn" onClick={() => setIsExpanded(!isExpanded)}>
+                        {isExpanded ? 'Hide' : 'Show Filters'}
+                    </button>
                 </div>
-                <button className="adv-toggle-btn" onClick={() => setIsExpanded(!isExpanded)}>
-                    {isExpanded ? 'Hide' : 'Show Filters'}
-                </button>
-            </div>
+            )}
 
-            {isExpanded && (
+            {(isExpanded || hideHeader) && (
                 <div className="adv-filter-body">
                     <div className="adv-filter-grid">
-                        {/* Pet Type */}
+                        {/* Pet Category */}
                         <div className="adv-filter-group">
-                            <label>Pet Type</label>
-                            <select name="type" value={filters.type} onChange={handleChange}>
-                                <option value="">All Types</option>
+                            <label>Pet Species</label>
+                            <select name="category" value={filters.category} onChange={handleChange}>
+                                <option value="">All Species</option>
                                 <option value="Dog">🐕 Dog</option>
                                 <option value="Cat">🐈 Cat</option>
                                 <option value="Others">🐾 Others</option>
@@ -143,6 +145,15 @@ const AdvancedSearch = ({ onFilterChange }) => {
                     margin-bottom: 2rem;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                     overflow: hidden;
+                }
+                .adv-filter-container.no-header {
+                    margin-bottom: 2rem;
+                    margin-top: -1rem; /* pull up closer to control bar */
+                    border-radius: 0 0 16px 16px;
+                    border-top: none;
+                }
+                .adv-filter-container.no-header .adv-filter-body {
+                    padding-top: 1.5rem;
                 }
                 .adv-filter-header {
                     display: flex;

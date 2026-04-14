@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import api from '../services/axios';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -11,8 +12,8 @@ import {
     FaUsers, FaPaw, FaClipboardList, FaHeart, FaBuilding,
     FaTrash, FaCheck, FaTimes, FaSearch, FaShieldAlt,
     FaChartLine, FaCog, FaHistory, FaBell, FaFlag, FaStore,
-    FaUserCircle, FaSignOutAlt, FaTachometerAlt, FaChevronDown, FaUserCheck,
-    FaEnvelope, FaReply, FaPaperPlane, FaGlobe, FaCheckCircle, FaExclamationTriangle, FaInfoCircle
+    FaUserCircle, FaSignOutAlt, FaTachometerAlt, FaChevronDown, FaUserCheck, FaEye,
+    FaEnvelope, FaReply, FaPaperPlane, FaGlobe, FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaSpinner
 } from 'react-icons/fa';
 
 
@@ -498,6 +499,7 @@ function PendingPetsTab({ pets, setPets }) {
                                 <td style={{ color: '#777', fontSize: '0.85rem' }}>{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : p.date}</td>
                                 <td>
                                     <div style={{ display: 'flex', gap: 8 }}>
+                                        <Link to={`/pet/${p._id}`} className="ad-action-btn blue" title="View"><FaEye /> View</Link>
                                         <button className="ad-action-btn green" onClick={() => approve(p._id)}><FaCheck /> Approve</button>
                                         <button className="ad-action-btn red" onClick={() => reject(p._id)}><FaTimes /> Reject</button>
                                     </div>
@@ -547,25 +549,28 @@ function PetsTab({ pets, setPets }) {
                                 <td><Badge label={p.status} color={PC[p.status] || '#888'} /></td>
                                 <td style={{ color: '#777', fontSize: '0.85rem' }}>{p.date}</td>
                                 <td>
-                                    <button 
-                                        className="ad-btn-icon red" 
-                                        title="Remove" 
-                                        onClick={async () => { 
-                                            const reason = window.prompt('Please provide a reason for removing this pet listing:');
-                                            if (reason === null) return; // User clicked Cancel
-                                            if (!reason.trim()) return toast.error('A reason is required to remove a pet listing.');
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <Link to={`/pet/${p._id}`} className="ad-btn-icon blue" title="View"><FaEye /></Link>
+                                        <button 
+                                            className="ad-btn-icon red" 
+                                            title="Remove" 
+                                            onClick={async () => { 
+                                                const reason = window.prompt('Please provide a reason for removing this pet listing:');
+                                                if (reason === null) return; // User clicked Cancel
+                                                if (!reason.trim()) return toast.error('A reason is required to remove a pet listing.');
 
-                                            try {
-                                                await api.delete(`/pets/${p._id}`, { params: { reason } });
-                                                save(pets.filter(x => x._id !== p._id)); 
-                                                toast.success('Listing completely removed'); 
-                                            } catch (err) {
-                                                toast.error('Failed to remove listing from server');
-                                            }
-                                        }}
-                                    >
-                                        <FaTrash />
-                                    </button>
+                                                try {
+                                                    await api.delete(`/pets/${p._id}`, { params: { reason } });
+                                                    save(pets.filter(x => x._id !== p._id)); 
+                                                    toast.success('Listing completely removed'); 
+                                                } catch (err) {
+                                                    toast.error('Failed to remove listing from server');
+                                                }
+                                            }}
+                                        >
+                                            <FaTrash />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -786,7 +791,7 @@ function AdminNotificationsTab({ notifications, onUpdate }) {
 }
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
-function SettingsTab() {
+function SettingsTab({ platformSettings, onPlatformSettingsRefresh }) {
     const [s, setS] = useState(() => lsGet('ad_settings', {
         siteName: 'Aashrey For Paws',
         adminEmail: 'admin@aashrey.com',
@@ -795,29 +800,230 @@ function SettingsTab() {
         requireEmailVerification: false,
         autoApproveNGO: false,
     }));
+    const [genEditing, setGenEditing] = useState(false);
     const toggle = k => setS(p => ({ ...p, [k]: !p[k] }));
-    const save = () => { lsSet('ad_settings', s); toast.success('Settings saved!'); };
+    const save = () => { 
+        lsSet('ad_settings', s); 
+        toast.success('General settings saved!'); 
+        setGenEditing(false);
+    };
+
+    const cancelGenEdit = () => {
+        setS(lsGet('ad_settings', {
+            siteName: 'Aashrey For Paws',
+            adminEmail: 'admin@aashrey.com',
+            maxPets: 10,
+            allowRegistrations: true,
+            requireEmailVerification: false,
+            autoApproveNGO: false,
+        }));
+        setGenEditing(false);
+    };
+
+    // Platform contact info (database-backed)
+    const [contact, setContact] = useState({
+        platformAddress: '',
+        platformPhone: '',
+        platformEmail: ''
+    });
+    const [contactSaving, setContactSaving] = useState(false);
+    const [contactEditing, setContactEditing] = useState(false);
+
+    const hasContactData = platformSettings?.platformAddress || platformSettings?.platformPhone || platformSettings?.platformEmail;
+
+    useEffect(() => {
+        if (platformSettings) {
+            setContact({
+                platformAddress: platformSettings.platformAddress || '',
+                platformPhone: platformSettings.platformPhone || '',
+                platformEmail: platformSettings.platformEmail || ''
+            });
+        }
+    }, [platformSettings]);
+
+    const saveContact = async () => {
+        if (
+            contact.platformAddress === (platformSettings?.platformAddress || '') &&
+            contact.platformPhone === (platformSettings?.platformPhone || '') &&
+            contact.platformEmail === (platformSettings?.platformEmail || '')
+        ) {
+            setContactEditing(false);
+            return toast.info('No changes to save.');
+        }
+        setContactSaving(true);
+        try {
+            const res = await api.put('/settings', contact);
+            if (res.data.success) {
+                toast.success('Platform contact info updated!');
+                if (onPlatformSettingsRefresh) onPlatformSettingsRefresh();
+                setContactEditing(false);
+            }
+        } catch (err) {
+            toast.error('Failed to update platform contact info.');
+        } finally {
+            setContactSaving(false);
+        }
+    };
+
+    const cancelContactEdit = () => {
+        setContact({
+            platformAddress: platformSettings?.platformAddress || '',
+            platformPhone: platformSettings?.platformPhone || '',
+            platformEmail: platformSettings?.platformEmail || ''
+        });
+        setContactEditing(false);
+    };
 
     return (
-        <div className="ad-panel" style={{ maxWidth: 580 }}>
-            <h3 className="ad-panel-title">⚙️ Platform Settings</h3>
-            <div style={{ display: 'grid', gap: '1.1rem' }}>
-                {[['Site Name', 'siteName', 'text'], ['Admin Email', 'adminEmail', 'email'], ['Max Pets Per Owner', 'maxPets', 'number']].map(([lbl, key, type]) => (
-                    <div key={key}>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: 5, color: '#374151' }}>{lbl}</label>
-                        <input type={type} className="ad-input" value={s[key]} onChange={e => setS(p => ({ ...p, [key]: e.target.value }))} />
+        <div style={{ display: 'grid', gap: '1.5rem', maxWidth: 620 }}>
+            {/* Platform Contact Info — Database backed */}
+            <div className="ad-panel">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h3 className="ad-panel-title" style={{ margin: 0 }}>📍 Platform Contact Info</h3>
+                    {!contactEditing && (
+                        <button 
+                            onClick={() => setContactEditing(true)}
+                            style={{ background: 'none', border: '1.5px solid #e2e8f0', padding: '6px 16px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: '#5D4037', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseEnter={e => { e.target.style.background = '#5D4037'; e.target.style.color = '#fff'; e.target.style.borderColor = '#5D4037'; }}
+                            onMouseLeave={e => { e.target.style.background = 'none'; e.target.style.color = '#5D4037'; e.target.style.borderColor = '#e2e8f0'; }}
+                        >
+                            ✏️ Edit
+                        </button>
+                    )}
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '1rem' }}>
+                    These details are displayed publicly on the Contact page and site Footer.
+                </p>
+
+                {contactEditing ? (
+                    <div style={{ display: 'grid', gap: '1.1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: 5, color: '#374151' }}>Address</label>
+                            <input type="text" className="ad-input" placeholder="e.g. 123 Animal Shelter Road, Kathmandu" value={contact.platformAddress} onChange={e => setContact(p => ({ ...p, platformAddress: e.target.value }))} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: 5, color: '#374151' }}>Phone Number</label>
+                            <input type="text" className="ad-input" placeholder="e.g. +977 1234567890" value={contact.platformPhone} onChange={e => setContact(p => ({ ...p, platformPhone: e.target.value }))} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: 5, color: '#374151' }}>Email Address</label>
+                            <input type="email" className="ad-input" placeholder="e.g. info@aashreyforpaws.org" value={contact.platformEmail} onChange={e => setContact(p => ({ ...p, platformEmail: e.target.value }))} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button className="ad-save-btn" onClick={saveContact} disabled={contactSaving} style={{ flex: 1 }}>
+                                {contactSaving ? '⏳ Saving...' : '💾 Save Contact Info'}
+                            </button>
+                            <button onClick={cancelContactEdit} style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '9px 20px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-                ))}
-                {[['allowRegistrations', 'Allow New Registrations'], ['requireEmailVerification', 'Require Email Verification'], ['autoApproveNGO', 'Auto-Approve NGO Applications']].map(([key, lbl]) => (
-                    <div key={key} className="ad-setting-toggle">
-                        <span style={{ fontSize: '0.9rem', color: '#374151' }}>{lbl}</span>
-                        <label className="ad-toggle">
-                            <input type="checkbox" checked={s[key]} onChange={() => toggle(key)} />
-                            <span className="ad-toggle-slider" />
-                        </label>
+                ) : hasContactData ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        {[
+                            { icon: '📍', label: 'Address', value: platformSettings?.platformAddress },
+                            { icon: '📞', label: 'Phone', value: platformSettings?.platformPhone },
+                            { icon: '✉️', label: 'Email', value: platformSettings?.platformEmail },
+                        ].map(item => (
+                            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                                <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.label}</div>
+                                    <div style={{ fontSize: '0.92rem', fontWeight: 600, color: item.value ? '#1e293b' : '#cbd5e1', marginTop: 2 }}>
+                                        {item.value || 'Not set'}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
-                <button className="ad-save-btn" onClick={save}>💾 Save Settings</button>
+                ) : (
+                    <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f8fafc', borderRadius: 12, border: '1px dashed #d1d5db' }}>
+                        <div style={{ fontSize: '2rem', opacity: 0.4, marginBottom: '0.5rem' }}>📍</div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0 }}>No contact information configured yet.</p>
+                        <button 
+                            onClick={() => setContactEditing(true)}
+                            style={{ marginTop: '1rem', background: '#f97316', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            + Add Contact Info
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* General Config — localStorage backed */}
+            <div className="ad-panel">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h3 className="ad-panel-title" style={{ margin: 0 }}>⚙️ General Settings</h3>
+                    {!genEditing && (
+                        <button 
+                            onClick={() => setGenEditing(true)}
+                            style={{ background: 'none', border: '1.5px solid #e2e8f0', padding: '6px 16px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: '#5D4037', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseEnter={e => { e.target.style.background = '#5D4037'; e.target.style.color = '#fff'; e.target.style.borderColor = '#5D4037'; }}
+                            onMouseLeave={e => { e.target.style.background = 'none'; e.target.style.color = '#5D4037'; e.target.style.borderColor = '#e2e8f0'; }}
+                        >
+                            ✏️ Edit
+                        </button>
+                    )}
+                </div>
+
+                {genEditing ? (
+                    <div style={{ display: 'grid', gap: '1.1rem' }}>
+                        {[['Site Name', 'siteName', 'text'], ['Admin Email', 'adminEmail', 'email'], ['Max Pets Per Owner', 'maxPets', 'number']].map(([lbl, key, type]) => (
+                            <div key={key}>
+                                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: 5, color: '#374151' }}>{lbl}</label>
+                                <input type={type} className="ad-input" value={s[key]} onChange={e => setS(p => ({ ...p, [key]: e.target.value }))} />
+                            </div>
+                        ))}
+                        {[['allowRegistrations', 'Allow New Registrations'], ['requireEmailVerification', 'Require Email Verification'], ['autoApproveNGO', 'Auto-Approve NGO Applications']].map(([key, lbl]) => (
+                            <div key={key} className="ad-setting-toggle">
+                                <span style={{ fontSize: '0.9rem', color: '#374151' }}>{lbl}</span>
+                                <label className="ad-toggle">
+                                    <input type="checkbox" checked={s[key]} onChange={() => toggle(key)} />
+                                    <span className="ad-toggle-slider" />
+                                </label>
+                            </div>
+                        ))}
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                            <button className="ad-save-btn" onClick={save} style={{ flex: 1 }}>💾 Save Settings</button>
+                            <button onClick={cancelGenEdit} style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '9px 20px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {[
+                                { label: 'Site Name', value: s.siteName, icon: '🏷️' },
+                                { label: 'Admin Email', value: s.adminEmail, icon: '📧' },
+                                { label: 'Max Pets/Owner', value: s.maxPets, icon: '🐾' }
+                            ].map(item => (
+                                <div key={item.label} style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{item.icon} {item.label}</div>
+                                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b' }}>{item.value}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {[
+                                { label: 'Registrations', active: s.allowRegistrations },
+                                { label: 'Email Verify', active: s.requireEmailVerification },
+                                { label: 'Auto NGO App', active: s.autoApproveNGO }
+                            ].map(item => (
+                                <div key={item.label} style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>{item.label}</div>
+                                    <span style={{ 
+                                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 800,
+                                        background: item.active ? '#dcfce7' : '#fee2e2',
+                                        color: item.active ? '#166534' : '#991b1b'
+                                    }}>
+                                        {item.active ? 'ENABLED' : 'DISABLED'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -1105,6 +1311,7 @@ function ContactMessagesTab() {
     const [subjectFilter, setSubjectFilter] = useState('All');
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
+    const [isReplySaving, setIsReplySaving] = useState(false);
 
     useEffect(() => { fetchMessages(); }, []);
 
@@ -1133,6 +1340,9 @@ function ContactMessagesTab() {
 
     const submitReply = async (id) => {
         if (!replyText.trim()) return toast.error('Please enter a response');
+        if (isReplySaving) return;
+
+        setIsReplySaving(true);
         try {
             const res = await api.patch(`/contact/${id}/reply`, { message: replyText });
             if (res.data.success) {
@@ -1142,7 +1352,9 @@ function ContactMessagesTab() {
                 setReplyText('');
             }
         } catch (err) {
-            toast.error('Failed to send reply');
+            toast.error(err.response?.data?.message || 'Failed to send reply');
+        } finally {
+            setIsReplySaving(false);
         }
     };
 
@@ -1289,23 +1501,41 @@ function ContactMessagesTab() {
                                     {/* Reply Form */}
                                     <div onClick={(e) => e.stopPropagation()}>
                                         {replyingTo === msg._id ? (
-                                            <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: 10 }}>
+                                            <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: 10, border: '1px solid #e2e8f0' }}>
                                                 <textarea 
-                                                    style={{ width: '100%', minHeight: 80, padding: 10, borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', marginBottom: 10, outline: 'none' }}
+                                                    style={{ 
+                                                        width: '100%', minHeight: 80, padding: 12, borderRadius: 8, 
+                                                        border: '1px solid #cbd5e1', fontSize: '0.85rem', marginBottom: 10, 
+                                                        outline: 'none', resize: 'vertical'
+                                                    }}
                                                     placeholder="Write your response... The user will be notified."
                                                     value={replyText}
                                                     onChange={e => setReplyText(e.target.value)}
+                                                    disabled={isReplySaving}
                                                 />
                                                 <div style={{ display: 'flex', gap: 8 }}>
                                                     <button 
                                                         onClick={() => submitReply(msg._id)}
-                                                        style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '6px 15px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                                                        disabled={isReplySaving || !replyText.trim()}
+                                                        style={{ 
+                                                            background: isReplySaving ? '#94a3b8' : '#8b5cf6', 
+                                                            color: '#fff', border: 'none', padding: '8px 18px', 
+                                                            borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, 
+                                                            cursor: isReplySaving ? 'not-allowed' : 'pointer', 
+                                                            display: 'flex', alignItems: 'center', gap: 6,
+                                                            transition: 'all 0.2s'
+                                                        }}
                                                     >
-                                                        <FaPaperPlane size={12} /> Send Response
+                                                        {isReplySaving ? (
+                                                            <><FaSpinner className="animate-spin" size={12}/> Sending...</>
+                                                        ) : (
+                                                            <><FaPaperPlane size={12} /> Send Response</>
+                                                        )}
                                                     </button>
                                                     <button 
                                                         onClick={() => { setReplyingTo(null); setReplyText(''); }}
-                                                        style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '6px 15px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                                                        disabled={isReplySaving}
+                                                        style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                                                     >
                                                         Cancel
                                                     </button>
@@ -1333,10 +1563,20 @@ function ContactMessagesTab() {
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
     const { user, logout, refreshUser } = useAuth();
+    const { settings: platformSettings, refreshSettings } = useSettings();
     const navigate = useNavigate();
     const dropRef = useRef(null);
-    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('ad_active_tab') || 'overview');
-    const changeTab = (tab) => { setActiveTab(tab); localStorage.setItem('ad_active_tab', tab); };
+    const [activeTab, setActiveTab] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') || localStorage.getItem('ad_active_tab') || 'overview';
+    });
+    
+    const changeTab = (tab) => { 
+        setActiveTab(tab); 
+        localStorage.setItem('ad_active_tab', tab);
+        const newUrl = tab === 'overview' ? '/admin' : `/admin?tab=${tab}`;
+        window.history.replaceState({}, '', newUrl);
+    };
     const [showDrop, setShowDrop] = useState(false);
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
@@ -1348,6 +1588,14 @@ export default function AdminDashboard() {
     useEffect(() => {
         fetchAllData();
         
+        // Handle deep-linking from notifications or reloads
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam) {
+            setActiveTab(tabParam);
+            localStorage.setItem('ad_active_tab', tabParam);
+        }
+
         // Professional Real-time Polling: Refresh data every 30 seconds
         const pollInterval = setInterval(() => {
             fetchAllData();
@@ -1493,7 +1741,7 @@ export default function AdminDashboard() {
                     {activeTab === 'reports' && <ReportsTab stats={summary} users={users} pets={pets} />}
                     {activeTab === 'notifications' && <AdminNotificationsTab notifications={activity} onUpdate={fetchAllData} />}
                     {activeTab === 'profile' && <ProfileTab user={user} onUpdate={refreshUser} />}
-                    {activeTab === 'settings' && <SettingsTab />}
+                    {activeTab === 'settings' && <SettingsTab platformSettings={platformSettings} onPlatformSettingsRefresh={refreshSettings} />}
                 </div>
             </main>
 

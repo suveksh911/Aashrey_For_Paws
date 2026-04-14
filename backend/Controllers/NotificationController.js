@@ -1,4 +1,5 @@
 const NotificationModel = require('../models/Notification');
+const UserModel = require('../models/User');
 
 // GET /notifications
 const getNotifications = async (req, res) => {
@@ -81,7 +82,25 @@ const createNotification = async (userId, type, message, link = '') => {
     }
 };
 
-module.exports = { getNotifications, addNotification, markAsRead, markAllRead, deleteNotification, deleteAllNotifications, createNotification };
+const notifyAdmins = async (type, message, link = '') => {
+    try {
+        const admins = await UserModel.find({ role: 'Admin' });
+        if (!admins || admins.length === 0) return;
+
+        const notifications = admins.map(admin => ({
+            userId: admin._id,
+            type,
+            message,
+            link
+        }));
+
+        await NotificationModel.insertMany(notifications);
+    } catch (err) {
+        console.error('Failed to notify admins:', err);
+    }
+};
+
+module.exports = { getNotifications, addNotification, markAsRead, markAllRead, deleteNotification, deleteAllNotifications, createNotification, notifyAdmins };
 
 
 

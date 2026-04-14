@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const authService = require('../services/AuthService');
+const { notifyAdmins } = require('./NotificationController');
 
 /**
  * Register a new user
@@ -42,6 +43,21 @@ const register = async (req, res) => {
         isVerified: user.isVerified,
       },
     });
+
+    // Notify Admins
+    if (backendRole === 'NGO') {
+        await notifyAdmins(
+            'warning',
+            `🏢 New NGO Verification Request: "${req.body.orgName || user.name}"`,
+            '/admin?tab=ngo-verify'
+        );
+    } else {
+        await notifyAdmins(
+            'info',
+            `👤 New User Registered: ${user.name} (${backendRole})`,
+            '/admin?tab=users'
+        );
+    }
   } catch (error) {
     console.error('Registration Error:', error);
     res.status(500).json({
@@ -189,7 +205,7 @@ const login = async (req, res) => {
  */
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('-password');
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     res.status(500).json({ success: false, message: "Error fetching profile" });
@@ -202,7 +218,7 @@ const getProfile = async (req, res) => {
  */
 const updateProfile = async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, req.body, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, req.body, { new: true }).select('-password');
     res.status(200).json({ success: true, message: "Profile updated", data: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: "Error updating profile" });

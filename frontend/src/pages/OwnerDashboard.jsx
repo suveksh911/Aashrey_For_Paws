@@ -5,7 +5,7 @@ import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
 import {
     FaPaw, FaClipboardList, FaBullhorn, FaSyringe, FaHeart, FaHistory,
-    FaUserCircle, FaShieldAlt, FaPlus, FaEdit, FaTrash,
+    FaUserCircle, FaShieldAlt, FaPlus, FaEdit, FaTrash, FaSave,
     FaEye, FaCheck, FaTimes, FaSignOutAlt, FaBars,
     FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaFileUpload,
     FaChartLine, FaDonate, FaBell, FaSpinner, FaCamera,
@@ -98,7 +98,9 @@ const OwnerDashboardStyles = () => (
             align-items: center !important;
             gap: 5px !important;
         }
-        .a-list-btn { background: white; color: #5d4037; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .a-list-btn { background: white; color: #5d4037; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; justify-content: center; }
+        .edit-profile-btn { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+        .edit-profile-btn:hover { background: rgba(255,255,255,0.1); border-color: white; }
         .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
         .status-available { background: #E8F5E9; color: #2E7D32; }
         .status-adopted { background: #E3F2FD; color: #1565C0; }
@@ -157,7 +159,18 @@ const NAV_ITEMS = [
 ];
 
 export default function OwnerDashboard({ user }) {
-    const [tab, setTab] = useState('overview');
+    const [tab, setTab] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') || localStorage.getItem('owner_active_tab') || 'overview';
+    });
+
+    const handleTabChange = (key) => {
+        setTab(key);
+        localStorage.setItem('owner_active_tab', key);
+        setSidebarOpen(false);
+        const newUrl = key === 'overview' ? '/owner' : `/owner?tab=${key}`;
+        window.history.replaceState({}, '', newUrl);
+    };
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [isBioExpanded, setIsBioExpanded] = useState(false);
     const [showReadMore, setShowReadMore] = useState(false);
@@ -186,6 +199,7 @@ export default function OwnerDashboard({ user }) {
         const activeT = params.get('tab');
         if (activeT && NAV_ITEMS.some(n => n.key === activeT)) {
             setTab(activeT);
+            localStorage.setItem('owner_active_tab', activeT);
         }
 
         const fetchAllData = async () => {
@@ -270,12 +284,7 @@ export default function OwnerDashboard({ user }) {
         reader.readAsDataURL(file);
     };
 
-    const handleTabChange = (key) => {
-        setTab(key);
-        setSidebarOpen(false);
-        const newUrl = key === 'overview' ? '/user' : `/user?tab=${key}`;
-        window.history.pushState(null, '', newUrl);
-    };
+
 
     const removeFavorite = (petId) => {
         const favoriteKey = `userFavorites_${user._id}`;
@@ -384,8 +393,8 @@ export default function OwnerDashboard({ user }) {
                             onClick={() => handleTabChange(item.key)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all
                                 ${tab === item.key
-                                    ? 'bg-white/15 text-white'
-                                    : 'text-amber-200 hover:bg-white/8 hover:text-white'}`}
+                                    ? 'bg-white/15 text-white shadow-lg shadow-black/10'
+                                    : 'text-amber-200/70 hover:bg-white/10 hover:text-white'}`}
                         >
                             <span className="text-base">{item.icon}</span>
                             {item.label}
@@ -529,8 +538,9 @@ export default function OwnerDashboard({ user }) {
                                             <h3 className="font-bold text-[#3E2723] mb-2">{pet.name}</h3>
                                             <span className={`status-pill status-${pet.status?.toLowerCase() || 'available'}`}>{pet.status || 'Available'}</span>
                                             <div className="flex gap-2 mt-4">
-                                                <Link to={`/edit-pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-blue-50 text-blue-600">Edit</Link>
-                                                <button onClick={() => handleDeleteListing(pet._id)} className="p-1.5 text-red-500 border border-red-50 rounded-lg bg-red-50"><FaTrash size={12}/></button>
+                                                <Link to={`/pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100">View</Link>
+                                                <Link to={`/edit-pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100">Edit</Link>
+                                                <button onClick={() => handleDeleteListing(pet._id)} className="p-1.5 px-3 text-red-500 border border-red-50 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"><FaTrash size={12}/></button>
                                             </div>
                                         </div>
                                     </div>
@@ -650,13 +660,12 @@ export default function OwnerDashboard({ user }) {
                                             <div className="a-badge">Pet Owner</div>
                                             <h1 className="text-3xl font-black text-white leading-tight mb-1">{user?.name || 'Owner'}</h1>
                                             <div className="relative">
-                                                <p 
-                                                    ref={bioRef}
-                                                    className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}
-                                                >
-                                                    {user?.bio || 'Dedicated pet owner sharing love and care.'}
+                                                <p className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}>
+                                                    {(user?.bio || 'Dedicated pet owner sharing love and care.').length > 120 && !isBioExpanded
+                                                        ? (user?.bio || 'Dedicated pet owner sharing love and care.').slice(0, 120) + '...'
+                                                        : (user?.bio || 'Dedicated pet owner sharing love and care.')}
                                                 </p>
-                                                {(showReadMore || isBioExpanded) && (
+                                                {((user?.bio || 'Dedicated pet owner sharing love and care.').length > 120) && (
                                                     <button 
                                                         onClick={(e) => { 
                                                             e.stopPropagation(); 
@@ -664,7 +673,7 @@ export default function OwnerDashboard({ user }) {
                                                         }}
                                                         className="a-read-more-btn"
                                                     >
-                                                        {isBioExpanded ? 'Show Less' : 'Read More'}
+                                                        {isBioExpanded ? 'Read less' : 'Read more'}
                                                     </button>
                                                 )}
                                             </div>
@@ -684,9 +693,10 @@ export default function OwnerDashboard({ user }) {
                                                 setIsEditingProfile(true);
                                             }
                                         }}
-                                        style={{ background: isEditingProfile ? '#fff' : 'transparent', color: isEditingProfile ? '#3E2723' : '#fff', borderColor: isEditingProfile ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                                        style={{ background: isEditingProfile ? '#fff' : 'transparent', color: isEditingProfile ? '#3E2723' : '#fff' }}
                                     >
-                                        {isEditingProfile ? <><FaSave /> Finish Editing</> : <><FaEdit /> Edit Profile</>}
+                                        <style>{`.edit-profile-btn { border: 2px solid ${isEditingProfile ? '#fff' : 'rgba(255,255,255,0.3)'} !important; border-radius: 12px; padding: 10px 20px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }`}</style>
+                                        {isEditingProfile ? <><FaCheckCircle /> Finish Editing</> : <><FaUserCircle /> Edit Profile</>}
                                     </button>
                                     <button className="a-list-btn" onClick={() => navigate('/add-pet')}>List Pet</button>
                                 </div>
@@ -710,7 +720,10 @@ export default function OwnerDashboard({ user }) {
                                                 <h3 className="font-bold text-[#3E2723]">{pet.name}</h3>
                                                 <p className="text-xs text-green-600 font-bold uppercase">Successfully Rehomed</p>
                                             </div>
-                                            <div className="ml-auto text-green-500"><FaCheckCircle size={20} /></div>
+                                            <div className="ml-auto flex items-center gap-4">
+                                                <Link to={`/pet/${pet._id}`} className="text-xs font-bold text-[#8D6E63] hover:underline">View</Link>
+                                                <div className="text-green-500" title="Successfully Rehomed"><FaCheckCircle size={20} /></div>
+                                            </div>
                                         </div>
                                     ))
                                 )}
@@ -914,8 +927,9 @@ export default function OwnerDashboard({ user }) {
                                             <h3 className="font-bold text-[#3E2723] mb-2">{pet.name}</h3>
                                             <p className="text-xs text-gray-400 mb-4">{pet.location}</p>
                                             <div className="flex gap-2">
-                                                <Link to={`/edit-pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-blue-50 text-blue-600">Edit</Link>
-                                                <button onClick={() => handleDeleteListing(pet._id)} className="p-1.5 text-red-500 border border-red-50 rounded-lg bg-red-50"><FaTrash size={12}/></button>
+                                                <Link to={`/pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100">View</Link>
+                                                <Link to={`/edit-pet/${pet._id}`} className="flex-1 py-1.5 text-center text-xs font-bold border border-gray-100 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100">Edit</Link>
+                                                <button onClick={() => handleDeleteListing(pet._id)} className="p-1.5 px-3 text-red-500 border border-red-50 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"><FaTrash size={12}/></button>
                                             </div>
                                         </div>
                                     </div>

@@ -111,13 +111,23 @@ const NAV_ITEMS = [
     { key: 'favorites', icon: <FaHeart />, label: 'Saved Pets' },
     { key: 'history', icon: <FaHistory />, label: 'Adoption History' },
     { key: 'vaccinations', icon: <FaShieldAlt />, label: 'Health Records' },
-    { key: 'reviews', icon: <FaStar />, label: 'My Reviews' },
     { key: 'messages', icon: <FaEnvelope />, label: 'My Messages' },
     { key: 'notifications', icon: <FaBell />, label: 'Notifications' },
 ];
 
 export default function AdopterDashboard({ user }) {
-    const [tab, setTab] = useState('overview');
+    const [tab, setTab] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') || localStorage.getItem('adopter_active_tab') || 'overview';
+    });
+
+    const handleTabChange = (key) => {
+        setTab(key);
+        localStorage.setItem('adopter_active_tab', key);
+        setSidebarOpen(false);
+        const newUrl = key === 'overview' ? '/user' : `/user?tab=${key}`;
+        window.history.replaceState({}, '', newUrl);
+    };
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [isBioExpanded, setIsBioExpanded] = useState(false);
     const [showReadMore, setShowReadMore] = useState(false);
@@ -130,7 +140,6 @@ export default function AdopterDashboard({ user }) {
     const [vaccinations, setVaccinations] = useState([]);
     const [messages, setMessages] = useState([]);
     const [favorites, setFavorites] = useState([]);
-    const [recentReviews, setRecentReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const { logout, refreshUser } = useAuth();
@@ -143,6 +152,7 @@ export default function AdopterDashboard({ user }) {
         const activeT = params.get('tab');
         if (activeT && NAV_ITEMS.some(n => n.key === activeT)) {
             setTab(activeT);
+            localStorage.setItem('adopter_active_tab', activeT);
         }
 
         const fetchAllData = async () => {
@@ -186,10 +196,6 @@ export default function AdopterDashboard({ user }) {
                     .then(res => { if (res.data.success) setMessages(res.data.data); })
                     .catch(err => console.error("Messages error", err));
 
-                api.get('/reviews/latest')
-                    .then(res => { if (res.data.success) setRecentReviews(res.data.data); })
-                    .catch(e => console.error("Recent reviews error", e));
-
             } catch (err) {
                 console.error("Dashboard data error", err);
                 toast.error('Failed to load some dashboard sections');
@@ -232,12 +238,7 @@ export default function AdopterDashboard({ user }) {
         toast.info('Removed from favorites');
     };
 
-    const handleTabChange = (key) => {
-        setTab(key);
-        setSidebarOpen(false);
-        const newUrl = key === 'overview' ? '/user' : `/user?tab=${key}`;
-        window.history.pushState(null, '', newUrl);
-    };
+
 
     const handleLogout = () => {
         logout();
@@ -335,13 +336,15 @@ export default function AdopterDashboard({ user }) {
                             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                     </div>
-                    <button onClick={() => handleTabChange('notifications')} className={`p-2 rounded-xl transition-colors relative ${tab === 'notifications' ? 'bg-amber-100 text-[#5D4037]' : 'text-gray-500 hover:bg-gray-100'}`}>
+                    <button 
+                        onClick={() => handleTabChange('notifications')} 
+                        className={`p-2 rounded-xl transition-colors relative ${tab === 'notifications' ? 'bg-amber-100 text-[#5D4037]' : 'text-gray-500 hover:bg-gray-100'}`}>
                         <FaBell size={18} />
                         {unreadNotifications > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>}
                     </button>
-                    <button onClick={() => handleTabChange('profile')} className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors">
+                    <Link to="/profile" onClick={(e) => { e.preventDefault(); handleTabChange('profile'); }} className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors">
                         <FaUserCircle size={20} />
-                    </button>
+                    </Link>
                 </header>
 
                 <main className="flex-1 px-4 lg:px-8 py-6 overflow-y-auto">
@@ -576,7 +579,10 @@ export default function AdopterDashboard({ user }) {
                                                 <h3 className="font-bold text-[#3E2723]">{item.petName}</h3>
                                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Adopted on: {new Date(item.date).toLocaleDateString()}</p>
                                             </div>
-                                            <div className="ml-auto text-green-500"><FaCheckCircle size={20} /></div>
+                                            <div className="ml-auto flex items-center gap-4">
+                                                {item.petId?._id && <Link to={`/pet/${item.petId._id}`} className="text-xs font-bold text-[#8D6E63] hover:underline">View</Link>}
+                                                <div className="text-green-500" title="Adopted"><FaCheckCircle size={20} /></div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -585,7 +591,6 @@ export default function AdopterDashboard({ user }) {
                     )}
 
                     {tab === 'vaccinations' && <div><h2 className="text-xl font-bold text-[#3E2723] mb-5">Vaccination Records</h2><VaccinationReminder showAddForm={true} /></div>}
-                    {tab === 'reviews' && <UserReviewsTab userId={user._id} />}
                     {tab === 'messages' && <UserMessagesTab messages={messages} loading={false} />}
                     {tab === 'notifications' && <React.Suspense fallback={<FaSpinner className="animate-spin" />}><Notifications isTab={true}/></React.Suspense>}
                     
@@ -610,13 +615,12 @@ export default function AdopterDashboard({ user }) {
                                             <div className="a-badge">Pet Adopter</div>
                                             <h1 className="text-3xl font-black text-white leading-tight mb-1">{user?.name || 'User'}</h1>
                                             <div className="relative">
-                                                <p 
-                                                    ref={bioRef}
-                                                    className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}
-                                                >
-                                                    {user?.bio || 'Passionate pet lover and community supporter.'}
+                                                <p className={`a-hero-bio text-white/90 text-sm mb-1 ${isBioExpanded ? 'expanded' : 'clamped'}`}>
+                                                    {(user?.bio || 'Passionate pet lover and community supporter.').length > 120 && !isBioExpanded
+                                                        ? (user?.bio || 'Passionate pet lover and community supporter.').slice(0, 120) + '...'
+                                                        : (user?.bio || 'Passionate pet lover and community supporter.')}
                                                 </p>
-                                                {(showReadMore || isBioExpanded) && (
+                                                {((user?.bio || 'Passionate pet lover and community supporter.').length > 120) && (
                                                     <button 
                                                         onClick={(e) => { 
                                                             e.stopPropagation(); 
@@ -624,7 +628,7 @@ export default function AdopterDashboard({ user }) {
                                                         }}
                                                         className="a-read-more-btn"
                                                     >
-                                                        {isBioExpanded ? 'Show Less' : 'Read More'}
+                                                        {isBioExpanded ? 'Read less' : 'Read more'}
                                                     </button>
                                                 )}
                                             </div>

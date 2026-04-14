@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaPaw, FaHeart, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function Footer() {
     const location = useLocation();
+    const { settings } = useSettings();
     
     // Hide footer on dashboard and full-screen routes
     const hiddenRoutes = ['/admin', '/ngo', '/user', '/owner', '/adopter'];
@@ -47,9 +49,9 @@ export default function Footer() {
                 <div className="footer-contact">
                     <h4>Contact Us</h4>
                     <ul className="contact-list">
-                        <li><span className="c-icon">📍</span> <span>123 Animal Shelter Road, Kathmandu</span></li>
-                        <li><span className="c-icon">📞</span> <span>+977 1234567890</span></li>
-                        <li><span className="c-icon">✉️</span> <span>info@aashreyforpaws.org</span></li>
+                        <li><span className="c-icon">📍</span> <span>{settings.platformAddress || 'Address not set'}</span></li>
+                        <li><span className="c-icon">📞</span> <span>{settings.platformPhone || 'Phone not set'}</span></li>
+                        <li><span className="c-icon">✉️</span> <span>{settings.platformEmail || 'Email not set'}</span></li>
                     </ul>
                 </div>
 

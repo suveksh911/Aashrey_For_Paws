@@ -4,7 +4,7 @@ const PetModel = require('../models/Pet');
 const AdoptionModel = require('../models/Adoption');
 const User = require('../models/User');
 const CampaignModel = require('../models/Campaign');
-const { createNotification } = require('./NotificationController');
+const { createNotification, notifyAdmins } = require('./NotificationController');
 const config = require('../config/config');
 
 const initiatePayment = async (req, res) => {
@@ -151,6 +151,13 @@ const verifyKhaltiPayment = async (req, res) => {
                                             `/user?tab=incoming`
                                         );
                                     }
+
+                                    // Notify Admins
+                                    await notifyAdmins(
+                                        'success',
+                                        `💰 Pet Purchased: ${buyer.name} bought "${pet.name}" for Rs. ${updatedRecord.amount}.`,
+                                        `/admin?tab=overview`
+                                    );
                                 }
                             }
                         }
@@ -182,6 +189,15 @@ const verifyKhaltiPayment = async (req, res) => {
                                     'success',
                                     `🙏 Thank you! Your donation of Rs. ${updatedRecord.amount} was successful.`,
                                     `/user?tab=history`
+                                );
+                            }
+
+                            // Notify Admins
+                            if (recipientNgo) {
+                                await notifyAdmins(
+                                    'success',
+                                    `💖 New Donation: Rs. ${updatedRecord.amount} donated to ${recipientNgo.name} by ${req.user?.name || 'A supporter'}.`,
+                                    `/admin?tab=reports`
                                 );
                             }
                         }
@@ -217,6 +233,13 @@ const verifyKhaltiPayment = async (req, res) => {
                                         `/campaigns`
                                     );
                                 }
+
+                                // Notify Admins
+                                await notifyAdmins(
+                                    'success',
+                                    `📢 Campaign Boost: Rs. ${updatedRecord.amount} contributed to "${campaign.title}" (${campaign.ngoName}).`,
+                                    `/admin?tab=reports`
+                                );
                             }
                         }
                     } catch (campaignErr) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { FaHeart, FaPaw, FaRegHeart, FaCheckCircle, FaSpinner, FaArrowLeft, FaShieldAlt, FaGlobe, FaPhoneAlt, FaEnvelope, FaTimes } from 'react-icons/fa';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
@@ -13,6 +13,75 @@ const DEMO_NGOS = [
     { _id: 'animalnepal_1', orgName: 'Animal Nepal', location: 'Nakkhu, Lalitpur', isVerified: true, phone: '+977-9841111111', bio: 'Improving the welfare of working equines and companion animals through rescue and community education.', image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
     { _id: 'snehacare_2', orgName: "Sneha's Care", location: 'Bhaisepati, Lalitpur', isVerified: true, phone: '+977-9842424242', bio: 'To provide a safe haven for injured and abandoned animals and promote animal welfare in Nepal.', image: 'https://images.unsplash.com/photo-1593134257782-e89567b7718a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
 ];
+
+const NgoCard = ({ ngo, idx, openDonateModal }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const bioText = ngo.bio || ngo.description || 'We are dedicated to rescuing and rehoming animals in need and providing a safe haven.';
+    const isLong = bioText.length > 120;
+    const displayText = !isLong || isExpanded ? bioText : bioText.slice(0, 120) + '...';
+
+    return (
+        <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col hover:shadow-xl transition-shadow">
+            <div className="h-48 w-full bg-gray-200 relative">
+                <img 
+                    src={ngo.profileImage || ngo.image || DEMO_NGOS[idx % DEMO_NGOS.length].image} 
+                    alt={ngo.orgName || ngo.name} 
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            
+            <div className="p-6 flex flex-col flex-grow">
+                {ngo.isVerified && (
+                    <div className="self-start mb-3 bg-[#0088FF] text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <FaShieldAlt size={10} /> Verified NGO
+                    </div>
+                )}
+                
+                <h3 className="text-lg font-medium text-gray-700 mb-2 font-serif">
+                    <Link to={ngo.isDemo ? '#' : `/ngo/${ngo._id}`} className="hover:text-[#8D6E63] hover:underline transition-colors focus:outline-none">
+                        {ngo.orgName || ngo.name || 'NGO'}
+                    </Link>
+                </h3>
+                
+                <div className="text-sm text-[#8D6E63] mb-6 whitespace-pre-wrap">
+                    <span>{displayText}</span>
+                    {isLong && (
+                        <button 
+                            onClick={() => setIsExpanded(!isExpanded)} 
+                            className="ml-1 text-blue-500 hover:text-blue-700 font-semibold focus:outline-none"
+                        >
+                            {isExpanded ? 'Read less' : 'Read more'}
+                        </button>
+                    )}
+                </div>
+                
+                <div className="space-y-2 mb-6 text-sm text-gray-500 flex-grow">
+                    <div className="flex items-center gap-2">
+                        <FaGlobe className="text-gray-400" />
+                        <span>{ngo.email || ngo.location || 'Kathmandu, Nepal'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <FaPhoneAlt className="text-gray-400" />
+                        <span>{ngo.phone || '+977-XXXXXXXXXX'}</span>
+                    </div>
+                </div>
+                
+                <button 
+                    onClick={() => openDonateModal(ngo)}
+                    className="w-full bg-[#8D6E63] text-white py-3 rounded-lg font-bold hover:bg-[#5D4037] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <span className="khalti-icon"></span> Donate to Support
+                </button>
+                
+                <div className="mt-4 text-center">
+                    <a href={ngo.website || '#'} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                        Visit Website →
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function Donate() {
     const location = useLocation();
@@ -132,55 +201,7 @@ export default function Donate() {
                 {/* NGOs Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {ngos.map((ngo, idx) => (
-                        <div key={ngo._id || idx} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col hover:shadow-xl transition-shadow">
-                            <div className="h-48 w-full bg-gray-200 relative">
-                                <img 
-                                    src={ngo.profileImage || ngo.image || DEMO_NGOS[idx % DEMO_NGOS.length].image} 
-                                    alt={ngo.orgName || ngo.name} 
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            
-                            <div className="p-6 flex flex-col flex-grow">
-                                {ngo.isVerified && (
-                                    <div className="self-start mb-3 bg-[#0088FF] text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                                        <FaShieldAlt size={10} /> Verified NGO
-                                    </div>
-                                )}
-                                
-                                <h3 className="text-lg font-medium text-gray-700 mb-2 font-serif">
-                                    {ngo.orgName || ngo.name || 'NGO'}
-                                </h3>
-                                
-                                <p className="text-sm text-[#8D6E63] mb-6 line-clamp-3">
-                                    {ngo.bio || ngo.description || 'We are dedicated to rescuing and rehoming animals in need and providing a safe haven.'}
-                                </p>
-                                
-                                <div className="space-y-2 mb-6 text-sm text-gray-500 flex-grow">
-                                    <div className="flex items-center gap-2">
-                                        <FaGlobe className="text-gray-400" />
-                                        <span>{ngo.email || ngo.location || 'Kathmandu, Nepal'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaPhoneAlt className="text-gray-400" />
-                                        <span>{ngo.phone || '+977-XXXXXXXXXX'}</span>
-                                    </div>
-                                </div>
-                                
-                                <button 
-                                    onClick={() => openDonateModal(ngo)}
-                                    className="w-full bg-[#8D6E63] text-white py-3 rounded-lg font-bold hover:bg-[#5D4037] transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <span className="khalti-icon"></span> Donate to Support
-                                </button>
-                                
-                                <div className="mt-4 text-center">
-                                    <a href={ngo.website || '#'} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                                        Visit Website →
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <NgoCard key={ngo._id || idx} ngo={ngo} idx={idx} openDonateModal={openDonateModal} />
                     ))}
                 </div>
 

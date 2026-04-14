@@ -9,6 +9,26 @@ import {
 import api from '../services/axios';
 import LocationPicker from './LocationPicker'; // Integrated without UI changes
 
+const ExpandableBio = ({ text, emptyMsg, className, style }) => {
+    const [expanded, setExpanded] = useState(false);
+    if (!text) return <span className="rp-empty">{emptyMsg || 'No description provided.'}</span>;
+    const isLong = text.length > 150;
+    const displayed = !isLong || expanded ? text : text.slice(0, 150) + '...';
+    return (
+        <div className={className} style={{...style, display: 'inline-block'}}>
+            <span>{displayed}</span>
+            {isLong && (
+                <button 
+                    onClick={() => setExpanded(!expanded)} 
+                    style={{ marginLeft: '8px', color: 'inherit', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.8, fontSize: '0.9em', padding: 0 }}
+                >
+                    {expanded ? 'Read less' : 'Read more'}
+                </button>
+            )}
+        </div>
+    );
+};
+
 const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = false, onEditingComplete }, ref) => {
     const { user, refreshUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
@@ -273,7 +293,7 @@ const NGOProfilePage = React.forwardRef(({ isTab = false, externalEditing = fals
                     <div className="rp-narrative-section">
                         {isEditing
                             ? <textarea name="description" value={data.description} onChange={handleChange} rows={8} className="rp-textarea premium-textarea" placeholder="Describe your organisation..." />
-                            : <p className="rp-about-text text-premium-dark" style={{ marginBottom: 0 }}>{data.description || <span className="rp-empty">No description provided.</span>}</p>
+                            : <ExpandableBio text={data.description} className="rp-about-text text-premium-dark" emptyMsg="No description provided." style={{ marginBottom: 0 }} />
                         }
                     </div>
                     {!isEditing && user?.createdAt && (
@@ -452,7 +472,7 @@ export const OwnerProfilePage = React.forwardRef(({ isTab = false, externalEditi
                 <div className="rp-featured-content">
                     {isEditing
                         ? <textarea name="bio" value={data.bio} onChange={handleChange} rows={5} className="rp-textarea premium-textarea" />
-                        : <p className="rp-bio text-premium">{data.bio || <span className="rp-empty">Share your pet story and experience here.</span>}</p>
+                        : <ExpandableBio text={data.bio} className="rp-bio text-premium" emptyMsg="Share your pet story and experience here." />
                     }
                 </div>
             </div>

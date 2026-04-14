@@ -4,11 +4,13 @@ import { FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
 import StarRating from '../components/common/StarRating';
 import api from '../services/axios';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 
 function Contact() {
     const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
     const [submitting, setSubmitting] = useState(false);
     const { user } = useAuth();
+    const { settings } = useSettings();
 
     useEffect(() => {
         if (user) {
@@ -40,18 +42,18 @@ function Contact() {
             <div className="contact-wrapper">
                 <div className="contact-info">
                     <h2>Get in Touch</h2>
-                    <p>Have questions about adoption? Want to volunteer? We'd love to hear from you.</p>
+                    <p>Whether you're looking to adopt, need to verify your NGO, or have a general inquiry, our team is here to assist you.</p>
                     <div className="info-item">
                         <span className="icon">📍</span>
-                        <p>123 Animal Shelter Road, Kathmandu, Nepal</p>
+                        <p>{settings.platformAddress || 'Address not configured yet'}</p>
                     </div>
                     <div className="info-item">
                         <span className="icon">📞</span>
-                        <p>+977 1234567890</p>
+                        <p>{settings.platformPhone || 'Phone not configured yet'}</p>
                     </div>
                     <div className="info-item">
                         <span className="icon">✉️</span>
-                        <p>info@aashreyforpaws.org</p>
+                        <p>{settings.platformEmail || 'Email not configured yet'}</p>
                     </div>
                 </div>
                 <div className="contact-form">
@@ -70,11 +72,9 @@ function Contact() {
                             <select name="subject" value={formData.subject} onChange={handleChange} required>
                                 <option value="" disabled>Select a reason...</option>
                                 <option value="Adoption Inquiry">🐾 Adoption Inquiry</option>
-                                <option value="Report a Stray">🚨 Report a Stray Animal</option>
-                                <option value="NGO Partnership">🤝 NGO Partnership</option>
-                                <option value="Volunteer">💚 Volunteer with Us</option>
-                                <option value="Lost & Found">🔍 Lost & Found Help</option>
-                                <option value="Donation Query">💰 Donation Query</option>
+                                <option value="Rescue Request">🚨 Rescue Request</option>
+                                <option value="NGO Verification">🏢 NGO Verification</option>
+                                <option value="Donation Issue">💰 Donation Issue</option>
                                 <option value="General Question">💬 General Question</option>
                                 <option value="Other">📋 Other</option>
                             </select>

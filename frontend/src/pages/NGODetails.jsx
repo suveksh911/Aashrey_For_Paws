@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     FaGlobe, FaPhone, FaMapMarkerAlt, FaEnvelope, FaPen,
     FaStar, FaCheckCircle, FaPaw, FaUserCircle, FaBuilding,
-    FaIdCard, FaCalendarAlt, FaHeart, FaShieldAlt, FaArrowLeft
+    FaIdCard, FaCalendarAlt, FaHeart, FaShieldAlt, FaArrowLeft, FaTrash
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -72,6 +72,24 @@ const NGODetails = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm('Are you sure you want to delete your review?')) return;
+        try {
+            await api.delete(`/reviews/${reviewId}`);
+            toast.info('Review deleted');
+            fetchAll();
+        } catch (err) {
+            toast.error('Failed to delete review');
+        }
+    };
+
+    const handleEditInitial = (r) => {
+        setRating(r.rating);
+        setComment(r.comment || '');
+        setShowForm(true);
+        window.scrollTo({ top: document.querySelector('form')?.offsetTop - 100 || 400, behavior: 'smooth' });
     };
 
     if (loading) return (
@@ -280,10 +298,24 @@ const NGODetails = () => {
                                                         <FaUserCircle size={20} color="#8D6E63" />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                                                            <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                                                {r.user?.name || r.userName || 'Anonymous'}
-                                                            </span>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '4px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                                                    {r.user?.name || r.userName || 'Anonymous'}
+                                                                </span>
+                                                                {user?._id === r.userId && (
+                                                                    <div style={{ display: 'flex', gap: '8px', marginLeft: '4px' }}>
+                                                                        <button onClick={() => handleEditInitial(r)} title="Edit review"
+                                                                            style={{ background: 'none', border: 'none', color: '#8D6E63', cursor: 'pointer', padding: 0, opacity: 0.7 }}>
+                                                                            <FaPen size={10} />
+                                                                        </button>
+                                                                        <button onClick={() => handleDeleteReview(r._id)} title="Delete review"
+                                                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, opacity: 0.7 }}>
+                                                                            <FaTrash size={10} />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             <div style={{ display: 'flex' }}>
                                                                 {[1, 2, 3, 4, 5].map(s => (
                                                                     <FaStar key={s} size={11} color={s <= r.rating ? '#ffc107' : '#e4e5e9'} />

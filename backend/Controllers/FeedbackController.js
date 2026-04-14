@@ -1,4 +1,5 @@
 const FeedbackModel = require('../models/Feedback');
+const { notifyAdmins } = require('./NotificationController');
 
 
 const getAllFeedback = async (req, res) => {
@@ -26,6 +27,14 @@ const createFeedback = async (req, res) => {
         });
 
         await newFeedback.save();
+
+        // Notify Admins
+        await notifyAdmins(
+            'info',
+            `💬 New Feedback: Rating ${rating}/5 from ${req.user.name}`,
+            '/admin?tab=reports'
+        );
+
         res.status(201).json({ success: true, message: 'Feedback submitted successfully', data: newFeedback });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to submit feedback' });

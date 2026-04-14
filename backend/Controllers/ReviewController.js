@@ -1,4 +1,5 @@
 const ReviewModel = require('../models/Review');
+const { createNotification, notifyAdmins } = require('./NotificationController');
 
 // GET /reviews/ngo/:ngoId — public, get all reviews for an NGO
 const getReviewsByNgo = async (req, res) => {
@@ -46,6 +47,20 @@ const createReview = async (req, res) => {
             existing.comment = comment || '';
             await existing.save();
             await updateUserRating(ngoId); // Update user stats
+
+            // Fetch target user to determine correct dashboard link
+            const UserModel = require('../models/User');
+            const targetUser = await UserModel.findById(ngoId);
+            const path = targetUser && targetUser.role === 'NGO' ? '/ngo?tab=reviews' : '/user?tab=reviews';
+
+            // Notify Target User
+            await createNotification(
+                ngoId,
+                'info',
+                `⭐ ${req.user.name} updated their review for you.`,
+                path
+            );
+
             return res.status(200).json({ success: true, message: 'Review updated', data: existing });
         }
 
@@ -58,6 +73,27 @@ const createReview = async (req, res) => {
         });
         await review.save();
         await updateUserRating(ngoId); // Update user stats
+
+        // Fetch target user for correct dashboard link
+        const UserModel = require('../models/User');
+        const targetUser = await UserModel.findById(ngoId);
+        const path = targetUser && targetUser.role === 'NGO' ? '/ngo?tab=reviews' : '/user?tab=reviews';
+
+        // Notify Target User
+        await createNotification(
+            ngoId,
+            'success',
+            `⭐ New ${rating}-star review from ${req.user.name}!`,
+            path
+        );
+
+        // Notify Admins
+        await notifyAdmins(
+            'info',
+            `⭐ New User Review: ${req.user.name} gave ${rating} stars to ${targetUser?.name || ngoId}`,
+            '/admin?tab=overview'
+        );
+
         res.status(201).json({ success: true, message: 'Review submitted', data: review });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to submit review' });

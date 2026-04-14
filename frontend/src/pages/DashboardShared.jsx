@@ -1,13 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope, FaStar, FaUserCircle, FaSpinner } from 'react-icons/fa';
+import { FaEnvelope, FaStar, FaUserCircle, FaSpinner, FaPaperPlane } from 'react-icons/fa';
 import api from '../services/axios';
 import { toast } from 'react-toastify';
 
 // ────────────────────────────────────────────────
 //  SECTION: User Messages Tab (NGO Style)
 // ────────────────────────────────────────────────
-export const UserMessagesTab = ({ messages, loading }) => {
+export const UserMessagesTab = ({ messages: initialMessages, loading }) => {
+    const [messages, setMessages] = useState(initialMessages || []);
     const [expanded, setExpanded] = useState(null);
+    const [userReplyText, setUserReplyText] = useState('');
+    const [isReplying, setIsReplying] = useState(false);
+
+    useEffect(() => {
+        setMessages(initialMessages || []);
+    }, [initialMessages]);
+
+    const handleUserReply = async (id) => {
+        if (!userReplyText.trim()) return toast.error('Please enter a message');
+        if (isReplying) return;
+
+        setIsReplying(true);
+        try {
+            const res = await api.patch(`/contact/${id}/user-reply`, { message: userReplyText });
+            if (res.data.success) {
+                toast.success('Reply sent successfully');
+                setMessages(messages.map(m => m._id === id ? res.data.data : m));
+                setUserReplyText('');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to send reply');
+        } finally {
+            setIsReplying(false);
+        }
+    };
 
     if (loading) return <div className="flex justify-center py-16"><FaSpinner className="animate-spin text-[#8D6E63]" size={28} /></div>;
 
@@ -35,16 +61,57 @@ export const UserMessagesTab = ({ messages, loading }) => {
                         <div className="mt-4 pt-4 border-t border-gray-50 animate-in fade-in slide-in-from-top-1 duration-300">
                             <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 font-medium">{msg.message}</div>
                             {msg.replies?.length > 0 && (
-                                <div className="space-y-4 ml-2 border-l-2 border-[#1e293b]/10 pl-5">
-                                    <div className="text-[10px] font-black text-[#1e293b] uppercase tracking-[0.2em] mb-2 opacity-60">Admin Support Response</div>
-                                    {msg.replies.map((reply, i) => (
-                                        <div key={i} className="bg-[#f8fafc] border border-[#e2e8f0] p-4 rounded-2xl relative shadow-sm before:content-[''] before:absolute before:-left-[21px] before:top-5 before:w-4 before:h-0.5 before:bg-[#e2e8f0]">
-                                            <p className="text-sm text-[#0f172a] font-semibold leading-relaxed">{reply.message}</p>
-                                            <span className="text-[10px] text-[#64748b] font-bold mt-2 block opacity-70 tracking-tight">{new Date(reply.createdAt).toLocaleString()}</span>
-                                        </div>
-                                    ))}
+                                <div className="space-y-4 ml-2 border-l-2 border-[#1e293b]/10 pl-5 mb-6">
+                                    {msg.replies.map((reply, i) => {
+                                        const isAdmin = reply.senderRole === 'Admin';
+                                        return (
+                                            <div key={i} className="mb-4">
+                                                <div className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 opacity-60 ${isAdmin ? 'text-[#1e293b]' : 'text-[#5D4037]'}`}>
+                                                    {isAdmin ? 'Admin Support Response' : 'My Follow-up'}
+                                                </div>
+                                                <div className={`p-4 rounded-2xl relative shadow-sm border ${
+                                                    isAdmin 
+                                                        ? 'bg-[#f8fafc] border-[#e2e8f0] before:content-[\'\'] before:absolute before:-left-[21px] before:top-5 before:w-4 before:h-0.5 before:bg-[#e2e8f0]' 
+                                                        : 'bg-[#fdf8f6] border-[#f5e6e0] before:content-[\'\'] before:absolute before:-left-[21px] before:top-5 before:w-4 before:h-0.5 before:bg-[#f5e6e0]'
+                                                }`}>
+                                                    <p className={`text-sm font-semibold leading-relaxed ${isAdmin ? 'text-[#0f172a]' : 'text-[#3e2723]'}`}>{reply.message}</p>
+                                                    <span className="text-[10px] text-[#64748b] font-bold mt-2 block opacity-70 tracking-tight">{new Date(reply.createdAt).toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
+
+                            {/* Reply Input for User */}
+                            <div className="mt-6 pt-4 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex flex-col gap-3">
+                                    <textarea 
+                                        className="w-full text-sm font-medium p-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5D4037]/20 focus:bg-white transition-all placeholder:text-gray-400 min-h-[100px] resize-none"
+                                        placeholder="Type your follow-up message here..."
+                                        value={userReplyText}
+                                        onChange={(e) => setUserReplyText(e.target.value)}
+                                        disabled={isReplying}
+                                    />
+                                    <div className="flex justify-end">
+                                        <button 
+                                            onClick={() => handleUserReply(msg._id)}
+                                            disabled={isReplying || !userReplyText.trim()}
+                                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 ${
+                                                isReplying || !userReplyText.trim()
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                                                    : 'bg-[#5D4037] text-white hover:bg-[#3E2723] shadow-[#5D4037]/20'
+                                            }`}
+                                        >
+                                            {isReplying ? (
+                                                <><FaSpinner className="animate-spin" /> Sending...</>
+                                            ) : (
+                                                <><FaPaperPlane /> Send Reply</>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="text-sm text-gray-400 line-clamp-1 italic mt-1 font-medium opacity-80">
