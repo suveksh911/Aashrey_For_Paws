@@ -1,5 +1,7 @@
 const config = {
-    apiUrl: 'http://localhost:5000/api'
+    
+    baseURL: import.meta.env.apiUrl || "", // only from env
 };
+
 
 export default config;
