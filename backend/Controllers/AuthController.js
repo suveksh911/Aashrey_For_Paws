@@ -2,10 +2,7 @@ const User = require('../models/User');
 const authService = require('../services/AuthService');
 const { notifyAdmins } = require('./NotificationController');
 
-/**
- * Register a new user
- * POST /api/auth/register
- */
+
 const register = async (req, res) => {
   try {
     const { name, email, password, role, phone, address } = req.body;
@@ -44,7 +41,7 @@ const register = async (req, res) => {
       },
     });
 
-    // Notify Admins
+    
     if (backendRole === 'NGO') {
         await notifyAdmins(
             'warning',
@@ -68,10 +65,7 @@ const register = async (req, res) => {
   }
 };
 
-/**
- * Verify OTP code
- * POST /api/auth/verify-otp
- */
+
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -104,10 +98,7 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-/**
- * Handle forgot password request
- * POST /api/auth/forgot-password
- */
+
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -119,7 +110,7 @@ const forgotPassword = async (req, res) => {
 
     const otp = authService.generateOTP();
     user.otp = otp;
-    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
     await user.save();
 
     await authService.sendResetEmail(email, otp, user.name);
@@ -134,10 +125,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-/**
- * Reset password using OTP
- * POST /api/auth/reset-password
- */
+
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -167,10 +155,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-/**
- * User Login
- * POST /api/auth/login
- */
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -199,10 +184,7 @@ const login = async (req, res) => {
   }
 };
 
-/**
- * Get current user profile
- * GET /api/auth/profile
- */
+
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -212,10 +194,7 @@ const getProfile = async (req, res) => {
   }
 };
 
-/**
- * Update current user profile
- * PUT /api/auth/profile
- */
+
 const updateProfile = async (req, res) => {
   try {
     const updatedUser = await User.findByIdAndUpdate(req.user._id, req.body, { new: true }).select('-password');

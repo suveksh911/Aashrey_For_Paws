@@ -9,7 +9,7 @@ const {
     verifyOTPSchema 
 } = require('../validators/AuthValidator');
 
-// Auth routes with unified Joi validation
+
 router.post('/login', validate(loginSchema), login);
 router.post('/signup', validate(registerSchema), register);
 router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);

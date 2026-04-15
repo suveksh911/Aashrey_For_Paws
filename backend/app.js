@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// ── Security ─────────────────────────────────────────────────
+
 app.use(helmet());
 
 const limiter = rateLimit({
@@ -19,16 +19,16 @@ const limiter = rateLimit({
 });
 app.use('/auth', limiter); 
 
-// ── Middleware ──────────────────────────────────────────────
+
 app.use(cors({ origin: config.frontendUrl || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
-// ── Health check ────────────────────────────────────────────
+
 app.get('/', (req, res) => {
   res.send('Aashrey For Paws Backend is running 🐾');
 });
 
-// ── Routes ──────────────────────────────────────────────────
+
 app.use('/api/auth', require('./routes/AuthRouter'));
 app.use('/api/pets', require('./routes/PetRouter'));
 app.use('/api/posts', require('./routes/PostRouter'));
@@ -45,7 +45,7 @@ app.use('/api/ngo', require('./routes/NgoRouter'));
 app.use('/api/payment', require('./routes/PaymentRouter'));
 app.use('/api/settings', require('./routes/SettingRouter'));
 
-
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Global Error:', err.stack);
   res.status(err.status || 500).json({
