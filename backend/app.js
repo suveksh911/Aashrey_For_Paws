@@ -1,4 +1,3 @@
-require('dotenv').config();
 const config = require('./config/config');
 const express = require('express');
 const cors = require('cors');
@@ -7,27 +6,28 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-
 app.use(helmet());
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100,                  
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' }
 });
-app.use('/auth', limiter); 
 
+app.use('/auth', limiter);
 
-app.use(cors({ origin: config.frontendUrl || 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: config.frontendUrl,
+  credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
-
 
 app.get('/', (req, res) => {
   res.send('Aashrey For Paws Backend is running 🐾');
 });
-
 
 app.use('/api/auth', require('./routes/AuthRouter'));
 app.use('/api/pets', require('./routes/PetRouter'));

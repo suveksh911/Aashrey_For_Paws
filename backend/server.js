@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-require('dotenv').config({ silent: true });
+require('dotenv').config();
 const config = require('./config/config');
 const app = require('./app');
 require('./config/db');
