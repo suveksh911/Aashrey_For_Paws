@@ -1,6 +1,6 @@
 const config = {
     
-    baseURL: import.meta.env.apiUrl || "", // only from env
+   baseURL: import.meta.env.VITE_apiUrl || "",
 };
 
 

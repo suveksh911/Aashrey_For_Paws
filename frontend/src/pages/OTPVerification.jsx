@@ -3,7 +3,7 @@ import { Shield, Loader } from "lucide-react";
 import Alert from "./Alert";
 import config from '../config';
 
-const API_BASE_URL = config.apiUrl;
+const API_BASE_URL = config.VITE_apiUrl;
 
 function OTPVerification({ email, onVerified, onBack }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
