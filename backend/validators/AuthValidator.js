@@ -13,10 +13,11 @@ const registerSchema = Joi.object({
         'string.min': 'Password must be at least 6 characters long',
         'string.empty': 'Password is required'
     }),
-    confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
+    
+    confirmPassword: Joi.string().valid(Joi.ref('password')).messages({
         'any.only': 'Passwords do not match'
     }),
-    role: Joi.string().valid('user', 'seller', 'NGO', 'Adopter', 'Owner').default('user'),
+   role: Joi.string().valid('NGO', 'Adopter', 'Owner').default('Adopter'),
     phone: Joi.string().allow('', null),
     address: Joi.string().allow('', null),
     orgName: Joi.string().allow('', null),
