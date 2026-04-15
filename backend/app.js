@@ -36,7 +36,7 @@ app.use('/api/contact', require('./routes/ContactRouter'));
 app.use('/api/admin', require('./routes/AdminRouter'));
 app.use('/api/adoptions', require('./routes/AdoptionRouter'));
 app.use('/api/vaccinations', require('./routes/VaccinationRouter'));
-app.use('/api/users', require('./routes/UserRouter'));
+app.use('/api/users', require('./routes/UserRouter')); //need to change
 app.use('/api/notifications', require('./routes/NotificationRouter'));
 app.use('/api/reviews', require('./routes/ReviewRouter'));
 app.use('/api/feedback', require('./routes/FeedbackRouter'));
