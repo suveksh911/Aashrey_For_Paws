@@ -119,10 +119,10 @@ function Login() {
                             </Link>
                         </div>
 
-                        <button type='submit' className='btn btn-primary btn-auth'>Sign In</button>
+                        <button type='submit' className='btn btn-primary btn-auth'>Log In</button>
                         
                         <div className="auth-footer">
-                            Don't have an account? <Link to="/signup">Sign Up</Link>
+                            Don't have an account? <Link to="/signup">Register</Link>
                         </div>
                     </form>
                 </div>

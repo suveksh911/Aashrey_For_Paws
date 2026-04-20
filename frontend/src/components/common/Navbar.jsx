@@ -195,7 +195,7 @@ const Navbar = () => {
             ) : (
               <div className="auth-buttons">
                 <Link to="/login" className="btn-login">Log In</Link>
-                <Link to="/signup" className="btn-signup">Sign Up</Link>
+                <Link to="/signup" className="btn-signup">Register</Link>
               </div>
             )}
 
@@ -257,7 +257,7 @@ const Navbar = () => {
                 </li>
                 <li>
                   <NavLink to="/signup" className="mobile-nav-link">
-                    <span className="mobile-nav-icon"><FaPaw /></span> Sign Up
+                    <span className="mobile-nav-icon"><FaPaw /></span> Register
                   </NavLink>
                 </li>
               </>

@@ -118,7 +118,7 @@ export default function Signup() {
                     {step === 1 && (
                         <div>
                             <div className="su-header">
-                                <h1>Create Account</h1>
+                                <h1>Register</h1>
                                 <p>Select your role to get started</p>
                             </div>
                             <div className="su-role-grid">
@@ -292,7 +292,7 @@ export default function Signup() {
 
                                 <div className="su-btn-row">
                                     <button type="button" className="su-btn-back" onClick={() => setStep(2)}><FaArrowLeft /> Back</button>
-                                    <button type="submit" className="su-btn">Create Account ✓</button>
+                                    <button type="submit" className="su-btn">Register ✓</button>
                                 </div>
                             </form>
                         </div>
