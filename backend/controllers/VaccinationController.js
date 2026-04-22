@@ -17,9 +17,7 @@ const getMyVaccinations = async (req, res) => {
     }
 };
 
-/**
- * Mark a vaccination as completed
- */
+
 const markVaccinationAsCompleted = async (req, res) => {
     try {
         const { id } = req.params;
@@ -42,9 +40,7 @@ const markVaccinationAsCompleted = async (req, res) => {
     }
 };
 
-/**
- * Schedule a new vaccination
- */
+
 const addVaccinationSchedule = async (req, res) => {
     try {
         const { petId, petName, vaccineName, vaccinationDate, executionDate, notes, reminderDays } = req.body;
@@ -65,7 +61,7 @@ const addVaccinationSchedule = async (req, res) => {
             reminderDays: reminderDays != null ? parseInt(reminderDays) : 3
         });
 
-        // Background: Send email confirmation
+        
         try {
             const user = await UserModel.findById(userId);
             if (user && user.email && config.email.user) {
@@ -98,9 +94,7 @@ const addVaccinationSchedule = async (req, res) => {
     }
 };
 
-/**
- * Check for due vaccinations and create notifications
- */
+
 const checkAndNotify = async (req, res) => {
     try {
         const userId = req.user._id;

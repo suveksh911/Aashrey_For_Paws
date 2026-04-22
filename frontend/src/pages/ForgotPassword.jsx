@@ -20,7 +20,7 @@ function ForgotPassword() {
             const response = await api.post('/auth/forgot-password', { email });
             if (response.data.success) {
                 toast.success(response.data.message || 'OTP sent successfully to your email.');
-                // Redirect to reset password page and pass the email in state
+                
                 setTimeout(() => {
                     navigate('/reset-password', { state: { email } });
                 }, 2000);

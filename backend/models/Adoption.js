@@ -16,11 +16,11 @@ const AdoptionSchema = new Schema({
         ref: 'User',
         required: true
     },
-    userName: { // Stored for easier display
+    userName: { 
         type: String,
         required: true
     },
-    ownerId: { // NGO or Owner who listed the pet
+    ownerId: { 
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true

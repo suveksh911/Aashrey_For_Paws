@@ -143,7 +143,7 @@ const createPet = async (req, res) => {
             `/user`
         );
 
-        // Notify Admins
+       
         if (newPet.isApproved) {
             await notifyAdmins(
                 'success',
@@ -181,7 +181,7 @@ const updatePet = async (req, res) => {
         const pet = await PetModel.findById(id);
         if (!pet) return res.status(404).json({ success: false, message: 'Pet not found' });
 
-        // Only the owner or admin can update
+        
         if (pet.ownerId.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
             return res.status(403).json({ success: false, message: 'Not authorized to update this pet' });
         }
@@ -246,7 +246,7 @@ const deletePet = async (req, res) => {
         
         await PetModel.findByIdAndDelete(id);
         
-        // Notify user if Admin is deleting their pet
+      
         if (isAdmin && pet.ownerId.toString() !== req.user._id.toString()) {
             const message = reason
                 ? `⚠️ Your pet listing for "${pet.name}" was removed by an Administrator. Reason: ${reason}`
@@ -265,7 +265,7 @@ const approvePet = async (req, res) => {
         const { id } = req.params;
         const pet = await PetModel.findByIdAndUpdate(id, { isApproved: true });
         
-        // Notify the owner
+    
         if (pet) {
             await createNotification(
                 pet.ownerId,
@@ -273,7 +273,7 @@ const approvePet = async (req, res) => {
                 `✨ Your pet profile for "${pet.name}" has been approved and is now live!`,
                 `/pet/${id}`
             );
-            // Log for admin
+            
             await createNotification(req.user._id, 'success', `Pet Listing Approved: ${pet.name}`);
         }
 

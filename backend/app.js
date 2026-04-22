@@ -45,7 +45,6 @@ app.use('/api/ngo', require('./routes/NgoRouter'));
 app.use('/api/payment', require('./routes/PaymentRouter'));
 app.use('/api/settings', require('./routes/SettingRouter'));
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Global Error:', err.stack);
   res.status(err.status || 500).json({

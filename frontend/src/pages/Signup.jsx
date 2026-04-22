@@ -20,17 +20,17 @@ export default function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [extra, setExtra] = useState({
-        // Common
+        
         phone: '',
         address: '',
-        // Owner-specific
+      
         idProofType: 'Citizenship',
-        // NGO-specific
+        
         orgName: '',
         registrationNo: '',
         mission: '',
         website: '',
-        // Adopter-specific
+       
         housingType: 'Apartment',
         hasOtherPets: false,
         experience: '',
@@ -114,7 +114,7 @@ export default function Signup() {
                         <div className="su-progress-fill" style={{ width: `${progressPct}%` }} />
                     </div>
 
-                    {/* ── Step 1: Role Selection ── */}
+                  
                     {step === 1 && (
                         <div>
                             <div className="su-header">
@@ -137,7 +137,7 @@ export default function Signup() {
                         </div>
                     )}
 
-                    {/* ── Step 2: Main Info ── */}
+                    
                     {step === 2 && (
                         <div>
                             <div className="su-header">

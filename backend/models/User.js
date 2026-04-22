@@ -49,7 +49,7 @@ const UserSchema = new Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Hash password before saving
+
 UserSchema.pre('save', async function() {
     if (!this.isModified('password')) {
         return;
@@ -59,7 +59,7 @@ UserSchema.pre('save', async function() {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match user entered password to hashed password in database
+
 UserSchema.methods.matchPassword = async function(enteredPassword) {
     const bcrypt = require('bcrypt');
     return await bcrypt.compare(enteredPassword, this.password);
